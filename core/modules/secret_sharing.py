@@ -2,7 +2,7 @@ from random import randint
 from core.modules import misc
 
 
-def split_secret(n, k, p, s, debug=False):
+def split_secret(n, k, p, s):
     coeff_list = [s]
     f_eval_list = []
 
@@ -16,8 +16,7 @@ def split_secret(n, k, p, s, debug=False):
     for i in range(1, n + 1):
         eval = misc.polynomial_eval(coeff_list, i) % p
         f_eval_list.append(eval)
-        if debug:
-            print("f(%s) mod %s = %s" % (i, p, eval))
+        # print("f(%s) mod %s = %s" % (i, p, eval))
 
     # return f(i)
-    return f_eval_list
+    return coeff_list, f_eval_list

@@ -20,7 +20,7 @@ def lambda_eval(i, lst, p, x=0):
     return (eval_num * misc.multiplicative_inverse(eval_den, p)) % p
 
 
-def reconstruct_secret(dict, p, debug):
+def reconstruct_secret(dict, p):
     sum = 0
     for node, share in dict.items():
         sum += lambda_eval(node, dict.keys(), p) * share
