@@ -15,7 +15,7 @@ def compute_sig(dict, msg, n, N, e):
         x_dict[node] = misc.square_and_multiply(digest, delta * share, N)
 
     for node, x_val in x_dict.items():
-        lambda_i_s = lp.lambda_eval(node, dict.keys(), delta)
+        lambda_i_s = int(lp.lambda_eval_s(node, dict.keys(), delta))
         w *= misc.square_and_multiply(x_val, 2 * lambda_i_s, N)
 
     one, a, b = misc.multiplicative_inverse(4 * (delta ** 2), e, True)
