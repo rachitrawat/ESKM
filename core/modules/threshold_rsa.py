@@ -9,10 +9,10 @@ def compute_sig(dict, msg, n, N, e):
     digest = hashlib.sha1(msg.encode("utf-8")).hexdigest()
     digest = int(digest, 16)
 
-    delta = 2 * math.factorial(n)
+    delta = math.factorial(n)
 
     for node, share in dict.items():
-        x_dict[node] = misc.square_and_multiply(digest, delta * share, N)
+        x_dict[node] = misc.square_and_multiply(digest, 2 * delta * share, N)
 
     for node, x_val in x_dict.items():
         lambda_i_s = int(lp.lambda_eval_s(node, dict.keys(), delta))
