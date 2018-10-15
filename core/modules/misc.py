@@ -11,7 +11,7 @@ def polynomial_eval(coeff_lst, x):
     return sum
 
 
-def multiplicative_inverse(a, b):
+def multiplicative_inverse(a, b, all=False):
     """Returns a tuple (r, i, j) such that r = gcd(a, b) = ia + jb
     """
     # r = gcd(a,b) i = multiplicative inverse of a mod b
@@ -33,8 +33,10 @@ def multiplicative_inverse(a, b):
         lx += ob  # If neg wrap modulo original b
     if ly < 0:
         ly += oa  # If neg wrap modulo original a
-    # return a , lx, ly  # Return only positive values
-    return lx
+
+    if not all:
+        return lx
+    return a, lx, ly  # Return only positive values
 
 
 # finds a primitive root for prime p

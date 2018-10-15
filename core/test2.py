@@ -67,12 +67,15 @@ while True:
         break
 totient_rsa = (p_rsa - 1) * (q_rsa - 1)
 N = p_rsa * q_rsa
-print("Generated n,p,q,totient:", N, p_rsa, q_rsa, totient_rsa)
+print("p:", p_rsa)
+print("q:", q_rsa)
+print("totient (phi):", totient_rsa)
 e = 65537
 d = misc.multiplicative_inverse(e, totient_rsa)
-print("Public key (n,e):", N, e)
+print("Public key (N,e):", N, e)
 print("Private key (d):", d)
 
 msg = input("\nEnter message to be signed: ")
 n, dict = split_verify(d)
-sig = tr.compute_sig(dict, msg, n, N, e)
+sig, digest = tr.compute_sig(dict, msg, n, N, e)
+print(len("{0:b}".format(sig)), len("{0:b}".format(sig % N)))
