@@ -4,7 +4,7 @@ from core.modules import secret_sharing as ss, lagrange_interpolation as li, ver
 
 
 def split_verify_reconstruct(s):
-    n = int(input("Enter total nodes: "))
+    n = int(input("\nEnter total nodes: "))
     k = int(input("Enter threshold: "))
     # s = int(input("Enter secret: "))
     # secret bit size
@@ -70,8 +70,8 @@ n_rsa = p_rsa * q_rsa
 print("Generated n,p,q,totient:", n_rsa, p_rsa, q_rsa, totient_rsa)
 e = 65537
 d = misc.multiplicative_inverse(e, totient_rsa)
-print("Public key:", e)
-print("Private key:", d)
+print("Public key (n,e):", n_rsa, e)
+print("Private key (d):", d)
 
 msg = int(input("\nEnter message to be signed: "))
 split_verify_reconstruct(d)
