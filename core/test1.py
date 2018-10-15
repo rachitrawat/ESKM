@@ -41,7 +41,7 @@ def split_verify_reconstruct(s):
 
     print("\nAll nodes have verified their shares!")
 
-    # share reconstruction
+    # secret reconstruction
 
     # select k random nodes
     # dict[node_i]= f(i)
