@@ -74,4 +74,4 @@ print("Public key:", e)
 print("Private key:", d)
 
 msg = int(input("\nEnter message to be signed: "))
-split_verify_reconstruct(msg)
+split_verify_reconstruct(d)
