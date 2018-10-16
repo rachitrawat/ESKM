@@ -6,8 +6,9 @@ from core.modules import misc, lagrange_interpolation as lp
 def compute_sig(dict, msg, n, N, e):
     x_dict = {}
     w = 1
-    digest = hashlib.sha1(msg.encode("utf-8")).hexdigest()
-    digest = int(digest, 16)
+    # digest = hashlib.sha1(msg.encode("utf-8")).hexdigest()
+    # digest = int(digest, 16)
+    digest = msg
 
     delta = math.factorial(n)
 
