@@ -3,13 +3,13 @@ from core.modules import misc
 
 
 # return lambda_i(x=0)
-def lambda_eval(i, lst, p, x=0):
+def lambda_eval(i, lst, p):
     num = []
     den = []
     for element in lst:
         if element != i:
-            num.append(x - element)
-            den.append(i - element)
+            num.append(element)
+            den.append(element - i)
 
     eval_num = reduce(lambda x, y: x * y, num)
     eval_den = reduce(lambda x, y: x * y, den)
@@ -21,13 +21,13 @@ def lambda_eval(i, lst, p, x=0):
 
 
 # return lambda_i(x=0)
-def lambda_eval_s(i, lst, delta, x=0):
+def lambda_eval_s(i, lst, delta):
     num = []
     den = []
     for element in lst:
         if element != i:
-            num.append(x - element)
-            den.append(i - element)
+            num.append(element)
+            den.append(element - i)
 
     eval_num = reduce(lambda x, y: x * y, num)
     eval_den = reduce(lambda x, y: x * y, den)
