@@ -1,46 +1,18 @@
 import random
 
-from core.modules import secret_sharing as ss, lagrange_interpolation as li, verify_share as vs, threshold_rsa as tr, \
+from core.modules import secret_sharing as ss, threshold_rsa as tr, \
     misc
 
 
-def split_verify(s):
+def split_verify(s, M):
     n = int(input("\nEnter total nodes: "))
     k = int(input("Enter threshold: "))
-    # s = int(input("Enter secret: "))
-    # secret bit size
-    # s is in 0...p-1
-    s_size = len("{0:b}".format(s))
-    # generate prime p st 2 * p + 1 is also a prime
-    # p is s_size + 1 bits
-    p = misc.generateLargePrime(s_size + 1)
-    # q is a prime such that p divides q-1
-    q = (2 * p) + 1
-    print("Generated primes:", p, q)
-    # generator
-    g = misc.find_primitive_root(q)
-    # set g as quadratic residue mod q
-    g = misc.square_and_multiply(g, 2, q)
-    print("Generator:", g)
+    p = M
 
     # share distribution
 
     coeff_lst, f_eval_lst = (ss.split_secret(n, k, p, s))
     print("\nEvaluated polynomial: ", f_eval_lst)
-
-    # share verification
-
-    publish_lst = []
-    for element in coeff_lst:
-        publish_lst.append(misc.square_and_multiply(g, element, q))
-
-    print("\nPublished info for verification: ", publish_lst)
-    for i in range(1, n + 1):
-        if not vs.verify_share(i, misc.square_and_multiply(g, f_eval_lst[i - 1], q), publish_lst, q):
-            print("\nNode %s: share verification has failed!" % i)
-            exit(1)
-
-    print("\nAll nodes have verified their shares!")
 
     # select k random nodes
     # dict[node_i]= f(i)
@@ -60,23 +32,29 @@ def split_verify(s):
 # threshold RSA
 
 b_rsa = int(input("\nEnter bit size for RSA primes: "))
-p_rsa = misc.generateLargePrime(b_rsa)
+p_ = misc.generateLargePrime(b_rsa)
 while True:
-    q_rsa = misc.generateLargePrime(b_rsa)
-    if q_rsa != p_rsa:
+    q_ = misc.generateLargePrime(b_rsa)
+    if q_ != p_:
         break
+p_rsa = 2 * p_ + 1
+q_rsa = 2 * q_ + 1
 totient_rsa = (p_rsa - 1) * (q_rsa - 1)
 N = p_rsa * q_rsa
+M = p_ * q_
 print("p:", p_rsa)
 print("q:", q_rsa)
+print("p_:", p_)
+print("q_:", q_)
+print("M:", M)
 print("totient (phi):", totient_rsa)
 e = 65537
-d = misc.multiplicative_inverse(e, totient_rsa)
+d = misc.multiplicative_inverse(e, M)
 print("Public key (N,e):", N, e)
 print("Private key (d):", d)
 
 msg = int(input("\nEnter message to be signed: "))
-n, dict = split_verify(d)
+n, dict = split_verify(d, M)
 sig_orig = misc.square_and_multiply(msg, d, N)
 dec_orig = misc.square_and_multiply(sig_orig, e, N)
 sig, digest = tr.compute_sig(dict, msg, n, N, e)
