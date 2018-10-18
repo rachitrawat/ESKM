@@ -11,7 +11,7 @@ def polynomial_eval(coeff_lst, x):
     return sum
 
 
-def multiplicative_inverse(a, b, all=False):
+def multiplicative_inverse(a, b):
     """"
     i = a_inv mod b
     j = b_inv mod a
@@ -36,9 +36,7 @@ def multiplicative_inverse(a, b, all=False):
     if ly < 0:
         ly += oa  # If neg wrap modulo original a
 
-    if not all:
-        return lx
-    return a, lx, ly  # Return only positive values
+    return lx
 
 
 # finds a primitive root for prime p
@@ -63,6 +61,11 @@ def find_primitive_root(p):
 
 
 def square_and_multiply(x, c, n):
+    # -ve power case
+    if c < 0:
+        x = multiplicative_inverse(x, n)
+        c = abs(c)
+
     # z=x^c mod n
     c = '{0:b}'.format(c)  # convert exponent to binary
     z = 1
