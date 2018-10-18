@@ -3,20 +3,18 @@ from core.modules import misc
 
 
 def split_secret(n, k, p, s):
-    coeff_list = [s]
-    f_eval_list = []
+    coefficient_list = [s]
+    shares_lst = []
 
     # Randomly choose k-1 degree elements in Zp
     for i in range(1, k):
-        coeff_list.append(randint(0, p - 1))
+        coefficient_list.append(randint(0, p - 1))
 
-    print("\nPolynomial co-efficients: ", coeff_list)
+    print("\nPolynomial co-efficients: ", coefficient_list)
 
-    # Compute f(i) mod p
+    # s(i) = f(i) mod p
     for i in range(1, n + 1):
-        eval = misc.polynomial_eval(coeff_list, i) % p
-        f_eval_list.append(eval)
-        # print("f(%s) mod %s = %s" % (i, p, eval))
+        eval = misc.polynomial_eval(coefficient_list, i) % p
+        shares_lst.append(eval)
 
-    # return f(i)
-    return coeff_list, f_eval_list
+    return coefficient_list, shares_lst

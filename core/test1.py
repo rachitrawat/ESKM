@@ -1,6 +1,6 @@
 import random
 
-from core.modules import secret_sharing as ss, lagrange_interpolation as li, verify_share as vs, misc
+from core.modules import secret_sharing as ss, lagrange_interpolation as li, share_verification as vs, misc
 
 
 def split_verify_reconstruct(s):

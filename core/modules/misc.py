@@ -138,7 +138,9 @@ def isPrime(num):
 
 
 def generateLargePrime(keysize=300):
-    # Return a random prime number of keysize bits in size.
+    # Return a random prime number p of keysize bits in size.
+    # q = 2 * p + 1 is also prime
+    # q is a safe prime
     while True:
         num = random.randrange(2 ** (keysize - 1), 2 ** keysize)
         if isPrime(num) and isPrime(2 * num + 1):
