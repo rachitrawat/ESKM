@@ -73,5 +73,4 @@ d = misc.multiplicative_inverse(e, totient_rsa)
 print("Public key (n,e):", n_rsa, e)
 print("Private key (d):", d)
 
-msg = int(input("\nEnter message to be signed: "))
 split_verify_reconstruct(d)
