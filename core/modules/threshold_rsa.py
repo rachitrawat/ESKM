@@ -9,7 +9,7 @@ def compute_threhold_sig(node_share_dict, digest, delta, n, e):
         x_i[node] = misc.square_and_multiply(digest, 2 * delta * share, n)
 
     for node, x_i in x_i.items():
-        lambda_i = lp.lambda_eval_s(node, node_share_dict.keys(), delta)
+        lambda_i = lp.lambda_eval(node, node_share_dict.keys(), delta, True)
         w *= misc.square_and_multiply(x_i, 2 * lambda_i, n)
 
     four_delta_sq = 4 * delta ** 2

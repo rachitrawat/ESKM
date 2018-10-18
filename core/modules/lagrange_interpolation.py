@@ -3,7 +3,7 @@ from core.modules import misc
 
 
 # return lambda_i(x=0)
-def lambda_eval(i, lst, p):
+def lambda_eval(i, lst, p, flag=False):
     num = []
     den = []
     for element in lst:
@@ -14,25 +14,14 @@ def lambda_eval(i, lst, p):
     eval_num = reduce(lambda x, y: x * y, num)
     eval_den = reduce(lambda x, y: x * y, den)
 
-    if eval_den < 0:
-        eval_den = p - abs(eval_den)
+    if not flag:
+        if eval_den < 0:
+            eval_den = p - abs(eval_den)
 
-    return (eval_num * misc.multiplicative_inverse(eval_den, p)) % p
+        return (eval_num * misc.multiplicative_inverse(eval_den, p)) % p
 
-
-# return lambda_i(x=0)
-def lambda_eval_s(i, lst, delta):
-    num = []
-    den = []
-    for element in lst:
-        if element != i:
-            num.append(element)
-            den.append(element - i)
-
-    eval_num = reduce(lambda x, y: x * y, num)
-    eval_den = reduce(lambda x, y: x * y, den)
-
-    return eval_num * delta // eval_den
+    # p is delta
+    return eval_num * p // eval_den
 
 
 def reconstruct_secret(dict, p):
