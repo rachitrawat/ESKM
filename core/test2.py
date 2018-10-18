@@ -1,4 +1,5 @@
 import hashlib
+import math
 import random
 
 from core.modules import secret_sharing as ss, threshold_rsa as tr, \
@@ -46,6 +47,8 @@ print("m:", m)
 # k out of l
 l = int(input("\nEnter total nodes: "))
 k = int(input("Enter threshold: "))
+delta = math.factorial(l)
+print("delta:", delta)
 
 msg = input("\nEnter message to be signed: ")
 digest = hashlib.sha1(msg.encode("utf-8")).hexdigest()
@@ -53,6 +56,6 @@ digest = int(digest, 16)
 node_share_dict = split_verify_shares(d, m, l, k)
 sig_orig = misc.square_and_multiply(digest, d, n)
 dec_orig = misc.square_and_multiply(sig_orig, e, n)
-threshold_sig = tr.compute_threhold_sig(node_share_dict, digest, l, n, e)
+threshold_sig = tr.compute_threhold_sig(node_share_dict, digest, delta, n, e)
 dec = misc.square_and_multiply(threshold_sig, e, n)
 print(sig_orig, dec_orig, threshold_sig, dec)
