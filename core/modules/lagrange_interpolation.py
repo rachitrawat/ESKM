@@ -32,7 +32,7 @@ def lambda_eval_s(i, lst, delta):
     eval_num = reduce(lambda x, y: x * y, num)
     eval_den = reduce(lambda x, y: x * y, den)
 
-    return eval_num * delta / eval_den
+    return eval_num * delta // eval_den
 
 
 def reconstruct_secret(dict, p):
