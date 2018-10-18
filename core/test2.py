@@ -26,35 +26,27 @@ def split_verify(s, M):
 
     return n, dict
 
-    # threshold rsa sig
-
 
 # threshold RSA
 
 b_rsa = int(input("\nEnter bit size for RSA primes: "))
-p_ = misc.generateLargePrime(b_rsa)
+p_rsa = misc.generateLargePrime(b_rsa)
 while True:
-    q_ = misc.generateLargePrime(b_rsa)
-    if q_ != p_:
+    q_rsa = misc.generateLargePrime(b_rsa)
+    if q_rsa != p_rsa:
         break
-p_rsa = 2 * p_ + 1
-q_rsa = 2 * q_ + 1
 totient_rsa = (p_rsa - 1) * (q_rsa - 1)
 N = p_rsa * q_rsa
-M = p_ * q_
 print("p:", p_rsa)
 print("q:", q_rsa)
-print("p_:", p_)
-print("q_:", q_)
-print("M:", M)
 print("totient (phi):", totient_rsa)
 e = 65537
-d = misc.multiplicative_inverse(e, M)
+d = misc.multiplicative_inverse(e, totient_rsa)
 print("Public key (N,e):", N, e)
 print("Private key (d):", d)
 
 msg = int(input("\nEnter message to be signed: "))
-n, dict = split_verify(d, M)
+n, dict = split_verify(d, totient_rsa)
 sig_orig = misc.square_and_multiply(msg, d, N)
 dec_orig = misc.square_and_multiply(sig_orig, e, N)
 sig, digest = tr.compute_sig(dict, msg, n, N, e)
