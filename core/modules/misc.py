@@ -12,7 +12,9 @@ def polynomial_eval(coeff_lst, x):
 
 
 def multiplicative_inverse(a, b, all=False):
-    """Returns a tuple (r, i, j) such that r = gcd(a, b) = ia + jb
+    """"
+    i = a_inv mod b
+    j = b_inv mod a
     """
     # r = gcd(a,b) i = multiplicative inverse of a mod b
     #      or      j = multiplicative inverse of b mod a
