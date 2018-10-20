@@ -66,17 +66,7 @@ def square_and_multiply(x, c, n):
         x = multiplicative_inverse(x, n)
         c = abs(c)
 
-    # z=x^c mod n
-    c = '{0:b}'.format(c)  # convert exponent to binary
-    z = 1
-    l = len(c)
-
-    for i in range(0, l):
-        z = z ** 2 % n
-        if c[i] == "1":
-            z = (z * x) % n
-
-    return int(z)
+    return pow(x, c, n)
 
 
 def rabinMiller(num):
