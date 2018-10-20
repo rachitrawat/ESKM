@@ -3,13 +3,31 @@ import math
 import random
 
 from core.modules import secret_sharing as ss, threshold_rsa as tr, \
-    misc
+    misc, share_verification as sv
 
 
 # share distribution
-def split_verify_shares(d, m, l, k):
+def split_verify_shares(d, m, n, l, k):
     coefficient_lst, shares_lst = (ss.split_secret(l, k, m, d))
     print("\nEvaluated polynomial: ", shares_lst)
+
+    q = n
+    g = 3
+
+    # share verification
+
+    publish_lst = []
+    for element in coefficient_lst:
+        publish_lst.append(misc.square_and_multiply(g, element, q))
+
+    print("\nPublished info for verification: ", publish_lst)
+
+    for i in range(1, l + 1):
+        if not sv.verify_share(i, misc.square_and_multiply(g, shares_lst[i - 1], q), publish_lst, q):
+            print("\nNode %s: share verification has failed!" % i)
+            exit(1)
+
+    print("\nAll nodes have verified their shares!")
 
     node_share_dict = {}
     while True:
@@ -53,10 +71,10 @@ print("delta:", delta)
 msg = input("\nEnter message to be signed: ")
 digest = hashlib.sha1(msg.encode("utf-8")).hexdigest()
 digest = int(digest, 16)
-node_share_dict = split_verify_shares(d, m, l, k)
+node_share_dict = split_verify_shares(d, m, n, l, k)
 sig_orig = misc.square_and_multiply(digest, d, n)
 dec_orig = misc.square_and_multiply(sig_orig, e, n)
 threshold_sig = tr.compute_threhold_sig(node_share_dict, digest, delta, n, e)
 dec = misc.square_and_multiply(threshold_sig, e, n)
-print("Orignal Sig and Dec:", sig_orig, dec_orig)
+print("\nOrignal Sig and Dec:", sig_orig, dec_orig)
 print("Threshold Sig and Dec:", threshold_sig, dec)

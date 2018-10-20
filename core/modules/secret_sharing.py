@@ -1,6 +1,9 @@
 from random import randint
+
 from core.modules import misc
 
+
+# shamir secret sharing
 
 def split_secret(n, k, p, s):
     coefficient_list = [s]

@@ -1,5 +1,6 @@
 from core.modules import misc
 
+# feldman share verification
 
 def verify_share(i, g_exp_share, public_info, q):
     prod = 1

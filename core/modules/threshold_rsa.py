@@ -1,6 +1,7 @@
 from core.modules import misc, lagrange_interpolation as lp
 
 
+# shoup threshold rsa
 def compute_threhold_sig(node_share_dict, digest, delta, n, e):
     x_i = {}
     w = 1
