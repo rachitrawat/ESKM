@@ -17,7 +17,7 @@ def split_secret(n, k, p, s):
 
     # s(i) = f(i) mod p
     for i in range(1, n + 1):
-        eval = misc.polynomial_eval(coefficient_list, i) % p
+        eval = misc.polynomial_eval(coefficient_list, i, p)
         shares_lst.append(eval)
 
     return coefficient_list, shares_lst

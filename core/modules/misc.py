@@ -1,12 +1,12 @@
 import random
 
 
-def polynomial_eval(coeff_lst, x):
+def polynomial_eval(coeff_lst, x, p):
     deg = len(coeff_lst)
     sum = 0
 
     for i in range(0, deg):
-        sum += (coeff_lst[i] * x ** i)
+        sum += coeff_lst[i] * pow(x, i, p)
 
     return sum
 
