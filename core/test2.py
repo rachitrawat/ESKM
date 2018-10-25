@@ -7,23 +7,33 @@ from core.modules import secret_sharing as ss, threshold_rsa as tr, \
 
 
 # share distribution
-def split_verify_shares(d, m, n, l, k):
+def split_verify_shares(d, m, n, l, k, p, q):
     coefficient_lst, shares_lst = (ss.split_secret(l, k, m, d))
     print("\nEvaluated polynomial: ", shares_lst)
 
-    q = n
-    g = 3
+    # q = n
+    # g = 3
+
+    # TODO
+    # n=pq
+    # find g in Zn*
+    # 1. find g_p in Zp*
+    g_p = misc.find_primitive_root(p)
+    # 2. find g_q in Zq*
+    g_q = misc.find_primitive_root(q)
+    # 3. Combine using CRT
+    g = misc.crt([g_p, g_q], [p, q])
 
     # share verification
 
     publish_lst = []
     for element in coefficient_lst:
-        publish_lst.append(misc.square_and_multiply(g, element, q))
+        publish_lst.append(misc.square_and_multiply(g, element, n))
 
     print("\nPublished info for verification: ", publish_lst)
 
     for i in range(1, l + 1):
-        if not sv.verify_share(i, misc.square_and_multiply(g, shares_lst[i - 1], q), publish_lst, q):
+        if not sv.verify_share(i, misc.square_and_multiply(g, shares_lst[i - 1], n), publish_lst, n):
             print("\nNode %s: share verification has failed!" % i)
             exit(1)
 
@@ -71,10 +81,8 @@ print("delta:", delta)
 msg = input("\nEnter message to be signed: ")
 digest = hashlib.sha1(msg.encode("utf-8")).hexdigest()
 digest = int(digest, 16)
-node_share_dict = split_verify_shares(d, m, n, l, k)
-sig_orig = misc.square_and_multiply(digest, d, n)
-dec_orig = misc.square_and_multiply(sig_orig, e, n)
+node_share_dict = split_verify_shares(d, m, n, l, k, p_rsa, q_rsa)
 threshold_sig = tr.compute_threhold_sig(node_share_dict, digest, delta, n, e)
 dec = misc.square_and_multiply(threshold_sig, e, n)
-print("\nOrignal Sig and Dec:", sig_orig, dec_orig)
-print("Threshold Sig and Dec:", threshold_sig, dec)
+print("\nThresh. Sig and Dec:", threshold_sig, dec)
+print("Sig. match: ", dec == digest % n)
