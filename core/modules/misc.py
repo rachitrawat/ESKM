@@ -10,7 +10,7 @@ def polynomial_eval(coeff_lst, x, p):
     sum = 0
 
     for i in range(0, deg):
-        sum += coeff_lst[i] * pow(x, i, p)
+        sum = (sum * x + coeff_lst[deg - 1 - i]) % p
 
     return sum
 
