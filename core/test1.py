@@ -10,11 +10,9 @@ def split_verify_reconstruct(s):
     # secret bit size
     # s is in 0...p-1
     s_size = len("{0:b}".format(s))
-    # generate prime p st 2 * p + 1 is also a prime
-    # p is s_size + 1 bits
-    p = misc.generateLargePrime(s_size + 1)
-    # q is a prime such that p divides q-1
-    q = (2 * p) + 1
+    # q is a safe prime
+    q = misc.generate_safe_prime(s_size + 1)
+    p = (q - 1) // 2
     print("Generated primes:", p, q)
     # generator
     g = misc.find_primitive_root(q)
@@ -60,9 +58,9 @@ def split_verify_reconstruct(s):
 # threshold RSA
 
 b_rsa = int(input("\nEnter bit size for RSA primes: "))
-p_rsa = misc.generateLargePrime(b_rsa)
+p_rsa = misc.generate_safe_prime(b_rsa)
 while True:
-    q_rsa = misc.generateLargePrime(b_rsa)
+    q_rsa = misc.generate_safe_prime(b_rsa)
     if q_rsa != p_rsa:
         break
 totient_rsa = (p_rsa - 1) * (q_rsa - 1)

@@ -1,5 +1,9 @@
 import random
 
+'''
+    Evaluates polynomial at x
+'''
+
 
 def polynomial_eval(coeff_lst, x, p):
     deg = len(coeff_lst)
@@ -11,12 +15,15 @@ def polynomial_eval(coeff_lst, x, p):
     return sum
 
 
-def multiplicative_inverse(a, b):
-    """"
+'''
     Extended Euclidean Algorithm
     i = a_inv mod b
     j = b_inv mod a
-    """
+    return i
+'''
+
+
+def multiplicative_inverse(a, b):
     x = 0
     y = 1
     lx = 1
@@ -33,33 +40,37 @@ def multiplicative_inverse(a, b):
     if ly < 0:
         ly += oa
 
-    # return i
     return lx
 
 
-# finds a primitive root for prime p
-# this function was implemented from the algorithm described here:
-# http://modular.math.washington.edu/edu/2007/spring/ent/ent-html/node31.html
+''' 
+    find a primitive root for a safe prime p
+    g is a primitive root if for all prime factors p_i of (p-1),
+    g^((p-1)/p_i) (mod p) is not congruent to 1
+
+'''
+
+
 def find_primitive_root(p):
     if p == 2:
         return 1
-    # the prime divisors of p-1 are 2 and (p-1)/2 because
-    # p = 2x + 1 where x is a prime
-    p1 = 2
+
+    p1 = (p - 1) // 2
     p2 = (p - 1) // p1
 
-    # test random g's until one is found that is a primitive root mod p
-    while 1:
+    while True:
         g = random.randint(2, p - 1)
-        # g is a primitive root if for all prime factors of p-1, p[i]
-        # g^((p-1)/p[i]) (mod p) is not congruent to 1
-        if not (square_and_multiply(g, (p - 1) // p1, p) == 1):
-            if not square_and_multiply(g, (p - 1) // p2, p) == 1:
-                return g
+        if not (square_and_multiply(g, p1, p) == 1) and not (square_and_multiply(g, p2, p) == 1):
+            return g
+
+
+'''
+    Use python built-in pow()
+    Also account for -ve exponent
+'''
 
 
 def square_and_multiply(x, c, n):
-    # -ve power case
     if c < 0:
         x = multiplicative_inverse(x, n)
         c = abs(c)
@@ -67,7 +78,7 @@ def square_and_multiply(x, c, n):
     return pow(x, c, n)
 
 
-def isPrime(n, k=11):
+def is_prime(n, k=11):
     if n == 2 or n == 3:
         return True
     elif n % 2 == 0 or n < 2:
@@ -87,8 +98,12 @@ def isPrime(n, k=11):
     return True
 
 
+'''
+    Primality test
+'''
+
+
 def miller_rabin(n, d, r):
-    """Miller-Rabin primality test"""
     a = random.randint(2, n - 2)
     x = pow(a, d, n)
 
@@ -103,16 +118,21 @@ def miller_rabin(n, d, r):
     return False
 
 
-def generateLargePrime(keysize=300):
-    # Return a random prime number p of keysize bits in size.
-    # q = 2 * p + 1 is also prime
-    # q is a safe prime
+'''
+    Return a random safe prime p of key-size bits in size.
+
+'''
+
+
+def generate_safe_prime(keysize=300):
     while True:
         num = random.randrange(2 ** (keysize - 1), 2 ** keysize)
-        if isPrime(num) and isPrime(2 * num + 1):
+        num_ = (num - 1) // 2
+        if is_prime(num) and is_prime(num_):
             return num
 
 
+# TODO
 # function implementing Chinese remainder theorem
 # list m contains all the modulii
 # list x contains the remainders of the equations

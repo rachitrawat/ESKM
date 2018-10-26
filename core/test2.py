@@ -53,13 +53,13 @@ def split_verify_shares(d, m, n, l, k, p, q):
 # Shoup's Threshold RSA
 
 b_rsa = int(input("\nEnter bit size for RSA primes: "))
-p_ = misc.generateLargePrime(b_rsa)
+p_rsa = misc.generate_safe_prime(b_rsa)
 while True:
-    q_ = misc.generateLargePrime(b_rsa)
-    if q_ != p_:
+    q_rsa = misc.generate_safe_prime(b_rsa)
+    if q_rsa != p_rsa:
         break
-p_rsa = 2 * p_ + 1
-q_rsa = 2 * q_ + 1
+p_ = (p_rsa - 1) // 2
+q_ = (q_rsa - 1) // 2
 n = p_rsa * q_rsa
 m = p_ * q_
 e = 65537
