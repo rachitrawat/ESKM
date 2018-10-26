@@ -23,6 +23,7 @@ def split_verify_shares(d, m, n, l, k, p, q):
     g_q = misc.find_primitive_root(q)
     # 3. Combine using CRT
     g = misc.crt([g_p, g_q], [p, q])
+    g = misc.square_and_multiply(g, 2, n)
 
     # share verification
 
