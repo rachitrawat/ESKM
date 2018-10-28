@@ -1,0 +1,2 @@
+# openssl private key info
+openssl rsa -in private.pem -text -inform PEM -noout
