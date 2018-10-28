@@ -12,7 +12,7 @@ GET_RSA_MODULUS = "openssl rsa -noout -modulus -in private.pem".split()
 GET_KEY_INFO = "openssl rsa -in private.pem -text -inform PEM -noout".split()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10026))
+bindsocket.bind((socket.gethostname(), 10029))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
@@ -21,8 +21,8 @@ while True:
     print("\nGot a connection from %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
-                                 certfile="certificates/server.cert",
-                                 keyfile="certificates/server.pkey",
+                                 certfile="certificates/sm.cert",
+                                 keyfile="certificates/sm.pkey",
                                  ssl_version=ssl.PROTOCOL_TLSv1)
 
     dir_ = "sm/" + fromaddr[0] + "/"
@@ -64,19 +64,20 @@ while True:
     # 5 out of 3
     coefficient_lst, shares_lst = ss.split_secret(5, 3, n, d)
 
-    # distrubute shares
-    server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    for i in range(1, 4):
+        # distrubute shares
+        server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # require a certificate from the cc Node
-    ssl_sock = ssl.wrap_socket(server_as_client,
-                               ca_certs="certificates/CA.cert",
-                               cert_reqs=ssl.CERT_REQUIRED)
+        # require a certificate from the cc Node
+        ssl_sock = ssl.wrap_socket(server_as_client,
+                                   ca_certs="certificates/CA.cert",
+                                   cert_reqs=ssl.CERT_REQUIRED)
 
-    print("\nUploading share to CC node ...")
-    ssl_sock.connect((socket.gethostname(), 4000))
-    ssl_sock.send(str(shares_lst[0]).encode('ascii'))
-    print("Done! Closing connection with CC node.")
-    ssl_sock.close()
+        print("\nUploading share to CC node %s ..." % i)
+        ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
+        ssl_sock.send(str(shares_lst[i - 1]).encode('ascii'))
+        print("Done! Closing connection with CC node %s." % i)
+        ssl_sock.close()
 
     # send public key to client
     print("\nSending public key to client...")

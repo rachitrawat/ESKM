@@ -3,7 +3,7 @@ import socket
 import ssl
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 4000))
+bindsocket.bind((socket.gethostname(), 4001))
 bindsocket.listen(5)
 print("CC node 1 is running!")
 

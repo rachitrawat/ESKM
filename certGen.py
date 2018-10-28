@@ -1,4 +1,9 @@
+import os
+
 from OpenSSL import crypto
+
+if not os.path.exists("certificates"):
+    os.makedirs("certificates")
 
 TYPE_RSA = crypto.TYPE_RSA
 TYPE_DSA = crypto.TYPE_DSA
@@ -79,11 +84,11 @@ open('certificates/CA.cert', 'w').write(crypto.dump_certificate(crypto.FILETYPE_
 pkey = createKeyPair(TYPE_RSA, 2048)
 req = createCertRequest(pkey, CN="Security Manager")
 cert = createCertificate(req, cacert, cakey, 1, 0, 60 * 60 * 24 * 365 * 5)  # five years
-open('certificates/server.pkey', 'w').write(crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey).decode('ascii'))
-open('certificates/server.cert', 'w').write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('ascii'))
+open('certificates/sm.pkey', 'w').write(crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey).decode('ascii'))
+open('certificates/sm.cert', 'w').write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('ascii'))
 
 # generate CA signed certificate for CC node i
-for i in range(1, 6):
+for i in range(1, 4):
     pkey = createKeyPair(TYPE_RSA, 2048)
     req = createCertRequest(pkey, CN="Node " + str(i))
     cert = createCertificate(req, cacert, cakey, 1, 0, 60 * 60 * 24 * 365 * 5)  # five years
