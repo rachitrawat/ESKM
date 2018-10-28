@@ -10,7 +10,7 @@ GET_RSA_MODULUS = "openssl rsa -noout -modulus -in private.pem".split()
 GET_KEY_INFO = "openssl rsa -in private.pem -text -inform PEM -noout".split()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10020))
+bindsocket.bind((socket.gethostname(), 10021))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
@@ -44,6 +44,7 @@ while True:
     # extract information from private key
     GET_RSA_MODULUS[5] = dir_ + "private.pem"
     n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
+    GET_KEY_INFO[3] = dir_ + "private.pem"
     data = (check_output(GET_KEY_INFO)).decode('utf-8')
 
     # key data in decimal
