@@ -61,8 +61,8 @@ while True:
     totient = (p - 1) * (q - 1)
 
     # split and share d
-    # 5 out of 3
-    coefficient_lst, shares_lst = ss.split_secret(5, 3, n, d)
+    # 2 out of 3
+    coefficient_lst, shares_lst = ss.split_secret(2, 3, n, d)
 
     for i in range(1, 4):
         # distrubute shares
