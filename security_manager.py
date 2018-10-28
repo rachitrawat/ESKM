@@ -1,13 +1,16 @@
 import socket
 import ssl
 import os
-from subprocess import call
+from subprocess import call, check_output
+import re
 
 GEN_RSA_PRIVATE = "openssl genrsa -out private.pem 2048".split()
 GEN_RSA_PUBLIC = "openssl rsa -in private.pem -outform PEM -pubout -out public.pem".split()
+GET_RSA_MODULUS = "openssl rsa -noout -modulus -in private.pem".split()
+GET_KEY_INFO = "openssl rsa -in private.pem -text -inform PEM -noout".split()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10029))
+bindsocket.bind((socket.gethostname(), 10020))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
@@ -39,6 +42,22 @@ while True:
     call(GEN_RSA_PUBLIC)
 
     # extract information from private key
+    GET_RSA_MODULUS[5] = dir_ + "private.pem"
+    n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
+    data = (check_output(GET_KEY_INFO)).decode('utf-8')
+
+    # key data in decimal
+    e = 65537
+    # use regex to extract hex
+    d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
+    p = int(re.sub('[^\w]', '', re.findall('prime1(?s)(.*)prime2', data)[0]), 16)
+    q = int(re.sub('[^\w]', '', re.findall('prime2(?s)(.*)exponent1', data)[0]), 16)
+    exp1 = int(re.sub('[^\w]', '', re.findall('exponent1(?s)(.*)exponent2', data)[0]), 16)
+    exp2 = int(re.sub('[^\w]', '', re.findall('exponent2(?s)(.*)coefficient', data)[0]), 16)
+    coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
+    totient = (p - 1) * (q - 1)
+
+    # split d
     # TODO
 
     # send public key to client
