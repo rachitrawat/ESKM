@@ -13,7 +13,7 @@ def split_secret(n, k, p, s):
     for i in range(1, k):
         coefficient_list.append(randint(0, p - 1))
 
-    print("\nPolynomial co-efficients: ", coefficient_list)
+    #print("\nPolynomial co-efficients: ", coefficient_list)
 
     # s(i) = f(i) mod p
     for i in range(1, n + 1):

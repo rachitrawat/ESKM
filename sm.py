@@ -1,8 +1,10 @@
+import os
+import re
 import socket
 import ssl
-import os
 from subprocess import call, check_output
-import re
+
+from core.modules import secret_sharing as ss
 
 GEN_RSA_PRIVATE = "openssl genrsa -out private.pem 2048".split()
 GEN_RSA_PUBLIC = "openssl rsa -in private.pem -outform PEM -pubout -out public.pem".split()
@@ -10,13 +12,13 @@ GET_RSA_MODULUS = "openssl rsa -noout -modulus -in private.pem".split()
 GET_KEY_INFO = "openssl rsa -in private.pem -text -inform PEM -noout".split()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10021))
+bindsocket.bind((socket.gethostname(), 10026))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
 while True:
     newsocket, fromaddr = bindsocket.accept()
-    print("Got a connection from %s" % str(fromaddr))
+    print("\nGot a connection from %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
                                  certfile="certificates/server.cert",
@@ -31,7 +33,7 @@ while True:
         print("Old client has connected!")
 
     size = str(connstream.recv(1024).decode('ascii'))
-    print("\nReceived RSA key size: ", size)
+    print("\nRequested RSA key size: ", size)
     GEN_RSA_PRIVATE[3] = dir_ + "private.pem"
     GEN_RSA_PRIVATE[4] = size
     # generate private key
@@ -43,12 +45,12 @@ while True:
 
     # extract information from private key
     GET_RSA_MODULUS[5] = dir_ + "private.pem"
-    n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
     GET_KEY_INFO[3] = dir_ + "private.pem"
     data = (check_output(GET_KEY_INFO)).decode('utf-8')
 
     # key data in decimal
     e = 65537
+    n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
     # use regex to extract hex
     d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
     p = int(re.sub('[^\w]', '', re.findall('prime1(?s)(.*)prime2', data)[0]), 16)
@@ -58,8 +60,23 @@ while True:
     coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
     totient = (p - 1) * (q - 1)
 
-    # split d
-    # TODO
+    # split and share d
+    # 5 out of 3
+    coefficient_lst, shares_lst = ss.split_secret(5, 3, n, d)
+
+    # distrubute shares
+    server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # require a certificate from the cc Node
+    ssl_sock = ssl.wrap_socket(server_as_client,
+                               ca_certs="certificates/CA.cert",
+                               cert_reqs=ssl.CERT_REQUIRED)
+
+    print("\nUploading share to CC node ...")
+    ssl_sock.connect((socket.gethostname(), 4000))
+    ssl_sock.send(str(shares_lst[0]).encode('ascii'))
+    print("Done! Closing connection with CC node.")
+    ssl_sock.close()
 
     # send public key to client
     print("\nSending public key to client...")
@@ -72,5 +89,5 @@ while True:
     print("Public key sent to client!")
 
     # finished with client
-    print("\nClient Disconnected!")
+    print("\nDone! Closing connection with client.")
     connstream.close()
