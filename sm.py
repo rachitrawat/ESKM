@@ -62,10 +62,10 @@ while True:
 
     # split and share d
     # 2 out of 3
-    coefficient_lst, shares_lst = ss.split_secret(2, 3, n, d)
+    coefficient_lst, shares_lst = ss.split_secret(3, 2, n, d)
 
     for i in range(1, 4):
-        # distrubute shares
+        # distribute shares
         server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # require a certificate from the cc Node
