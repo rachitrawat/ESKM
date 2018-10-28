@@ -75,9 +75,19 @@ cacert = createCertificate(careq, careq, cakey, 0, 0, 60 * 60 * 24 * 365 * 5)  #
 open('certificates/CA.pkey', 'w').write(crypto.dump_privatekey(crypto.FILETYPE_PEM, cakey).decode('ascii'))
 open('certificates/CA.cert', 'w').write(crypto.dump_certificate(crypto.FILETYPE_PEM, cacert).decode('ascii'))
 
-# generate CA signed certificate for server
+# generate CA signed certificate for Security Manager
 pkey = createKeyPair(TYPE_RSA, 2048)
-req = createCertRequest(pkey, CN="Server")
+req = createCertRequest(pkey, CN="Security Manager")
 cert = createCertificate(req, cacert, cakey, 1, 0, 60 * 60 * 24 * 365 * 5)  # five years
 open('certificates/server.pkey', 'w').write(crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey).decode('ascii'))
 open('certificates/server.cert', 'w').write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('ascii'))
+
+# generate CA signed certificate for CC node i
+for i in range(1, 6):
+    pkey = createKeyPair(TYPE_RSA, 2048)
+    req = createCertRequest(pkey, CN="Node " + str(i))
+    cert = createCertificate(req, cacert, cakey, 1, 0, 60 * 60 * 24 * 365 * 5)  # five years
+    open('certificates/node' + str(i) + '.pkey', 'w').write(
+        crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey).decode('ascii'))
+    open('certificates/node' + str(i) + '.cert', 'w').write(
+        crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('ascii'))
