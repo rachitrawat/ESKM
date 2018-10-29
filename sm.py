@@ -51,7 +51,7 @@ while True:
     # key data in decimal
     e = 65537
     n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
-    # use regex to extract hex
+    # use regex to extract hex and convert to decimal
     d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
     p = int(re.sub('[^\w]', '', re.findall('prime1(?s)(.*)prime2', data)[0]), 16)
     q = int(re.sub('[^\w]', '', re.findall('prime2(?s)(.*)exponent1', data)[0]), 16)

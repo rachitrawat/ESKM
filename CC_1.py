@@ -54,6 +54,8 @@ while True:
         x = misc.square_and_multiply(digest, 2 * delta * share, n)
         print("Sending sig fragment to client...")
         connstream.send(str(x).encode('ascii'))
+        print("Sending RSA modulus to client...")
+        connstream.send(str(n).encode('ascii'))
         # finished with client
         print("Done! Closing connection with client.")
         connstream.close()
