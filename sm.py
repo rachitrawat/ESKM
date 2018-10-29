@@ -12,7 +12,7 @@ GET_RSA_MODULUS = "openssl rsa -noout -modulus -in private.pem".split()
 GET_KEY_INFO = "openssl rsa -in private.pem -text -inform PEM -noout".split()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10029))
+bindsocket.bind((socket.gethostname(), 10028))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
@@ -75,7 +75,9 @@ while True:
 
         print("\nUploading share to CC node %s ..." % i)
         ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
+        ssl_sock.send("0".encode('ascii'))
         ssl_sock.send(str(shares_lst[i - 1]).encode('ascii'))
+        ssl_sock.send(str(n).encode('ascii'))
         print("Done! Closing connection with CC node %s." % i)
         ssl_sock.close()
 
