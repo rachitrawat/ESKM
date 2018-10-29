@@ -8,7 +8,7 @@ from core.modules import misc
 bindsocket = socket.socket()
 bindsocket.bind((socket.gethostname(), 4001))
 bindsocket.listen(5)
-print("CC node 1 is running!")
+print("CC_1 is running!")
 delta = math.factorial(3)
 
 while True:
@@ -16,11 +16,11 @@ while True:
     print("\nGot a connection from %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
-                                 certfile="certificates/node1.cert",
-                                 keyfile="certificates/node1.pkey",
+                                 certfile="certificates/CC_1.cert",
+                                 keyfile="certificates/CC_1.pkey",
                                  ssl_version=ssl.PROTOCOL_TLSv1)
 
-    dir_ = "cc_1/"
+    dir_ = "CC_1/"
     if not os.path.exists(dir_):
         os.makedirs(dir_)
 
@@ -30,16 +30,16 @@ while True:
         print("\nSM has connected!")
         # receive key-share
         share = str(connstream.recv(1024).decode('ascii'))
-        print("\nReceived share successfully!")
+        print("Received share successfully!")
         # receive RSA modulus
         n = str(connstream.recv(1024).decode('ascii'))
-        print("\nReceived RSA modulus successfully!")
+        print("Received RSA modulus successfully!")
 
         with open(dir_ + 'share.txt', 'w+') as the_file:
             the_file.write(share + "\n" + n)
 
         # finished with SM
-        print("\nDone! Closing connection with SM.")
+        print("Done! Closing connection with SM.")
         connstream.close()
 
     else:
@@ -55,5 +55,5 @@ while True:
         print("Sending sig fragment to client...")
         connstream.send(str(x).encode('ascii'))
         # finished with client
-        print("\nDone! Closing connection with client.")
+        print("Done! Closing connection with client.")
         connstream.close()

@@ -92,5 +92,5 @@ while True:
     print("Public key sent to client!")
 
     # finished with client
-    print("\nDone! Closing connection with client.")
+    print("Done! Closing connection with client.")
     connstream.close()
