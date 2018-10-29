@@ -57,8 +57,6 @@ while True:
         coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
         totient = (p - 1) * (q - 1)
 
-        print(d)
-
         # split and share d
         # 2 out of 3
         coefficient_lst, shares_lst = ss.split_secret(3, 2, totient, d)
