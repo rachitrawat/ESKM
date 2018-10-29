@@ -62,7 +62,7 @@ while True:
 
     # split and share d
     # 2 out of 3
-    coefficient_lst, shares_lst = ss.split_secret(3, 2, n, d)
+    coefficient_lst, shares_lst = ss.split_secret(3, 2, totient, d)
 
     for i in range(1, 4):
         # distribute shares
