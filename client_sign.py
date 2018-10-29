@@ -52,4 +52,4 @@ b = (1 - (four_delta_sq * a)) // e
 threshold_sig = misc.square_and_multiply(w, a, n) * misc.square_and_multiply(digest, b, n)
 threshold_sig %= n
 
-print("\nSignature:", threshold_sig)
+print("\nThreshold Signature:", threshold_sig)

@@ -1,3 +1,4 @@
+import os
 import socket
 import ssl
 
@@ -13,6 +14,9 @@ ssl_sock.connect((socket.gethostname(), 10028))
 size = input("Enter RSA key size in bits: ")
 # request RSA key from server
 ssl_sock.send(size.encode('ascii'))
+
+if not os.path.exists("client"):
+    os.makedirs("client")
 
 # receive public key
 print("\nReceiving public key from SM...")
