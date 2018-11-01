@@ -10,17 +10,18 @@ bindsocket.bind((socket.gethostname(), 4001))
 bindsocket.listen(5)
 print("CC_1 is running!")
 delta = math.factorial(3)
+ROOT_DIR = os.getcwd()
 
 while True:
     newsocket, fromaddr = bindsocket.accept()
     print("\nGot a connection from %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
-                                 certfile="certificates/CC_1.cert",
-                                 keyfile="certificates/CC_1.pkey",
+                                 certfile=ROOT_DIR + "/certificates/CC_1.cert",
+                                 keyfile=ROOT_DIR + "/certificates/CC_1.pkey",
                                  ssl_version=ssl.PROTOCOL_TLSv1)
 
-    dir_ = "CC_1/"
+    dir_ = ROOT_DIR + "/CC_1/"
     if not os.path.exists(dir_):
         os.makedirs(dir_)
 

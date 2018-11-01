@@ -9,7 +9,7 @@ ssl_sock = ssl.wrap_socket(s,
                            ca_certs="certificates/CA.cert",
                            cert_reqs=ssl.CERT_REQUIRED)
 
-ssl_sock.connect((socket.gethostname(), 10028))
+ssl_sock.connect((socket.gethostname(), 10036))
 
 size = input("Enter RSA key size in bits: ")
 # request RSA key from server
@@ -20,7 +20,7 @@ if not os.path.exists("client"):
 
 # receive public key
 print("\nReceiving public key from SM...")
-with open('client/public.pem', 'wb') as f:
+with open('client/id_rsa.pub', 'wb') as f:
     while True:
         data = ssl_sock.recv(1024)
         if not data:

@@ -10,9 +10,11 @@ GEN_RSA_PRIVATE = "openssl genrsa -out private.pem 2048".split()
 GEN_RSA_PUBLIC = "openssl rsa -in private.pem -outform PEM -pubout -out public.pem".split()
 GET_RSA_MODULUS = "openssl rsa -noout -modulus -in private.pem".split()
 GET_KEY_INFO = "openssl rsa -in private.pem -text -inform PEM -noout".split()
+CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
+ROOT_DIR = os.getcwd()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10028))
+bindsocket.bind((socket.gethostname(), 10036))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
@@ -21,28 +23,31 @@ while True:
     print("\nGot a connection from %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
-                                 certfile="certificates/sm.cert",
-                                 keyfile="certificates/sm.pkey",
+                                 certfile=ROOT_DIR + "/certificates/sm.cert",
+                                 keyfile=ROOT_DIR + "/certificates/sm.pkey",
                                  ssl_version=ssl.PROTOCOL_TLSv1)
 
-    dir_ = "sm/" + fromaddr[0] + "/"
+    dir_ = ROOT_DIR + "/SM/" + fromaddr[0]
+
     if not os.path.exists(dir_):
         os.makedirs(dir_)
+        os.chdir(dir_)
+        print(os.getcwd())
         print("New client has connected!")
         size = str(connstream.recv(1024).decode('ascii'))
         print("\nRequested RSA key size: ", size)
-        GEN_RSA_PRIVATE[3] = dir_ + "private.pem"
         GEN_RSA_PRIVATE[4] = size
         # generate private key
         call(GEN_RSA_PRIVATE)
         # generate public key
-        GEN_RSA_PUBLIC[3] = dir_ + "private.pem"
-        GEN_RSA_PUBLIC[8] = dir_ + "public.pem"
         call(GEN_RSA_PUBLIC)
+        # convert to ssh format
+        pub = (check_output(CONVERT_SSH_PUB)).decode('utf-8')
+
+        with open("id_rsa.pub", "w+") as text_file:
+            text_file.write(pub)
 
         # extract information from private key
-        GET_RSA_MODULUS[5] = dir_ + "private.pem"
-        GET_KEY_INFO[3] = dir_ + "private.pem"
         data = (check_output(GET_KEY_INFO)).decode('utf-8')
 
         # key data in decimal
@@ -67,7 +72,7 @@ while True:
 
             # require a certificate from the cc Node
             ssl_sock = ssl.wrap_socket(server_as_client,
-                                       ca_certs="certificates/CA.cert",
+                                       ca_certs=ROOT_DIR + "/certificates/CA.cert",
                                        cert_reqs=ssl.CERT_REQUIRED)
 
             print("\nUploading share to CC node %s ..." % i)
@@ -81,9 +86,10 @@ while True:
     else:
         print("Old client has connected!")
 
+    os.chdir(dir_)
     # send public key to client
     print("\nSending public key to client...")
-    f = open(dir_ + "public.pem", 'rb')
+    f = open("id_rsa.pub", 'rb')
     l = f.read(1024)
     while l:
         connstream.send(l)
@@ -94,3 +100,4 @@ while True:
     # finished with client
     print("Done! Closing connection with client.")
     connstream.close()
+    os.chdir(ROOT_DIR)
