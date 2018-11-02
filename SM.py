@@ -6,15 +6,18 @@ from subprocess import call, check_output
 
 from core.modules import secret_sharing as ss
 
-GEN_RSA_PRIVATE = "openssl genrsa -out private.pem 2048".split()
-GEN_RSA_PUBLIC = "openssl rsa -in private.pem -outform PEM -pubout -out public.pem".split()
-GET_RSA_MODULUS = "openssl rsa -noout -modulus -in private.pem".split()
-GET_KEY_INFO = "openssl rsa -in private.pem -text -inform PEM -noout".split()
+# use local openssl
+OPENSSL = "/usr/local/ssl/bin/openssl "
+
+GEN_RSA_PRIVATE = (OPENSSL + "genrsa -out private.pem 2048").split()
+GEN_RSA_PUBLIC = (OPENSSL + "rsa -in private.pem -outform PEM -pubout -out public.pem").split()
+GET_RSA_MODULUS = (OPENSSL + "rsa -noout -modulus -in private.pem").split()
+GET_KEY_INFO = (OPENSSL + "rsa -in private.pem -text -inform PEM -noout").split()
 CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
 ROOT_DIR = os.getcwd()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10036))
+bindsocket.bind((socket.gethostname(), 10038))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
@@ -61,6 +64,10 @@ while True:
         exp2 = int(re.sub('[^\w]', '', re.findall('exponent2(?s)(.*)coefficient', data)[0]), 16)
         coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
         totient = (p - 1) * (q - 1)
+        # p_ = (p - 1) // 2
+        # q_ = (q - 1) // 2
+        # m = p_ * q_
+        # d = misc.multiplicative_inverse(e, m)
 
         # split and share d
         # 2 out of 3
