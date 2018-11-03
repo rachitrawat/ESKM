@@ -1,13 +1,17 @@
-import hashlib
 import math
 import socket
 import ssl
 
 from core.modules import lagrange_interpolation as lp, misc
 
-msg = input("\nEnter message to be signed: ")
-digest = hashlib.sha1(msg.encode("utf-8")).hexdigest()
-digest = int(digest, 16)
+# read Encoded Message (EM) from file
+# EM will be signed
+with open("/tmp/eskm_em.txt") as f:
+    content = f.readlines()
+
+em = ''.join(content)
+digest = int(em, 16)
+
 x = []
 delta = math.factorial(3)
 n = 0
@@ -18,7 +22,7 @@ for i in range(1, 4):
 
     # require a certificate from the CC node
     ssl_sock = ssl.wrap_socket(s,
-                               ca_certs="certificates/CA.cert",
+                               ca_certs="/home/r/PycharmProjects/ESKM/certificates/CA.cert",
                                cert_reqs=ssl.CERT_REQUIRED)
 
     ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
@@ -52,4 +56,24 @@ b = (1 - (four_delta_sq * a)) // e
 threshold_sig = misc.square_and_multiply(w, a, n) * misc.square_and_multiply(digest, b, n)
 threshold_sig %= n
 
-print("\nThreshold Signature:", threshold_sig)
+print("\nThreshold Signature (Decimal):", threshold_sig)
+
+char_lst = list(hex(threshold_sig)[2:])
+length = len(char_lst)
+lst1 = []
+lst2 = []
+i = 0
+j = 0
+while i < length - 1:
+    lst1.append(char_lst[i] + char_lst[i + 1])
+    lst2.append(str(int(lst1[j], 16)))
+    i += 2
+    j += 1
+
+threshold_sig = ''.join(lst1)
+
+print("\nThreshold Signature (Octal):", threshold_sig)
+
+# write signature to file
+with open('/tmp/eskm_sig.txt', 'w+') as the_file:
+    the_file.write(' '.join(lst2))
