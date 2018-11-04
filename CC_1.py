@@ -32,22 +32,22 @@ while True:
     if flag == "0":
         print("\nSM has connected!")
         # receive key-share
+        print("Receiving share...")
         share = str(connstream.recv(1024).decode('ascii'))
-        print("Received share successfully!")
         # receive RSA modulus
+        print("Receiving RSA modulus...")
         n = int(connstream.recv(1024).decode('ascii'))
-        print("Received RSA modulus successfully!")
         # receive verification values
+        print("Receiving verification values...")
         str_lst = connstream.recv(1024).decode('ascii')
         publish_lst = ast.literal_eval(str_lst)
         g = int(connstream.recv(1024).decode('ascii'))
-        print("Received verification values successfully!")
 
         # share verification
         if not sv.verify_share(node_no, misc.square_and_multiply(g, int(share), n), publish_lst, n):
-            print("Share verification failed!")
+            print("Share verification: FAILED")
         else:
-            print("Share verification successful!")
+            print("Share verification: OK")
             with open(dir_ + 'share.txt', 'w+') as the_file:
                 the_file.write(share + "\n" + str(n))
 
@@ -65,7 +65,7 @@ while True:
         share = (int(content[0]))
         n = (int(content[1]))
         x = misc.square_and_multiply(digest, 2 * delta * share, n)
-        print("Sending sig fragment to client...")
+        print("Sending signature fragment to client...")
         connstream.send(str(x).encode('ascii'))
         print("Sending RSA modulus to client...")
         connstream.send(str(n).encode('ascii'))
