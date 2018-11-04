@@ -1,9 +1,10 @@
+import ast
 import math
 import os
 import socket
 import ssl
 
-from core.modules import misc
+from core.modules import misc, share_verification as sv
 
 bindsocket = socket.socket()
 bindsocket.bind((socket.gethostname(), 4001))
@@ -11,6 +12,7 @@ bindsocket.listen(5)
 print("CC_1 is running!")
 delta = math.factorial(3)
 ROOT_DIR = os.getcwd()
+node_no = 1
 
 while True:
     newsocket, fromaddr = bindsocket.accept()
@@ -33,11 +35,21 @@ while True:
         share = str(connstream.recv(1024).decode('ascii'))
         print("Received share successfully!")
         # receive RSA modulus
-        n = str(connstream.recv(1024).decode('ascii'))
+        n = int(connstream.recv(1024).decode('ascii'))
         print("Received RSA modulus successfully!")
+        # receive verification values
+        str_lst = connstream.recv(1024).decode('ascii')
+        publish_lst = ast.literal_eval(str_lst)
+        g = int(connstream.recv(1024).decode('ascii'))
+        print("Received verification values successfully!")
 
-        with open(dir_ + 'share.txt', 'w+') as the_file:
-            the_file.write(share + "\n" + n)
+        # share verification
+        if not sv.verify_share(node_no, misc.square_and_multiply(g, int(share), n), publish_lst, n):
+            print("Share verification failed!")
+        else:
+            print("Share verification successful!")
+            with open(dir_ + 'share.txt', 'w+') as the_file:
+                the_file.write(share + "\n" + str(n))
 
         # finished with SM
         print("Done! Closing connection with SM.")

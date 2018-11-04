@@ -4,7 +4,9 @@ import socket
 import ssl
 from subprocess import call, check_output
 
-from core.modules import secret_sharing as ss
+from core.modules import secret_sharing as ss, misc
+
+debug = False
 
 # use local openssl
 OPENSSL = "/usr/local/ssl/bin/openssl "
@@ -17,9 +19,14 @@ CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
 ROOT_DIR = os.getcwd()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10038))
+bindsocket.bind((socket.gethostname(), 10032))
 bindsocket.listen(5)
 print("Security Manager is running!")
+
+# Total no of nodes
+l = 3
+# Threshold no of nodes
+k = 2
 
 while True:
     newsocket, fromaddr = bindsocket.accept()
@@ -57,24 +64,35 @@ while True:
         e = 65537
         n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
         # use regex to extract hex and convert to decimal
-        d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
+        # d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
         p = int(re.sub('[^\w]', '', re.findall('prime1(?s)(.*)prime2', data)[0]), 16)
         q = int(re.sub('[^\w]', '', re.findall('prime2(?s)(.*)exponent1', data)[0]), 16)
-        exp1 = int(re.sub('[^\w]', '', re.findall('exponent1(?s)(.*)exponent2', data)[0]), 16)
-        exp2 = int(re.sub('[^\w]', '', re.findall('exponent2(?s)(.*)coefficient', data)[0]), 16)
-        coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
+        # exp1 = int(re.sub('[^\w]', '', re.findall('exponent1(?s)(.*)exponent2', data)[0]), 16)
+        # exp2 = int(re.sub('[^\w]', '', re.findall('exponent2(?s)(.*)coefficient', data)[0]), 16)
+        # coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
         totient = (p - 1) * (q - 1)
-        # p_ = (p - 1) // 2
-        # q_ = (q - 1) // 2
-        # m = p_ * q_
-        # d = misc.multiplicative_inverse(e, m)
+        p_ = (p - 1) // 2
+        q_ = (q - 1) // 2
+        m = p_ * q_
+        d = misc.multiplicative_inverse(e, m)
+        g_p = misc.find_primitive_root(p)
+        g_q = misc.find_primitive_root(q)
+        g = misc.crt([g_p, g_q], [p, q])
+        g = misc.square_and_multiply(g, 2, n)
 
         # split and share d
-        # 2 out of 3
-        coefficient_lst, shares_lst = ss.split_secret(3, 2, totient, d)
+        # 2 out of 3 secret sharing over m
+        coefficient_lst, shares_lst = ss.split_secret(l, k, m, d)
+
+        # info for share verification
+        publish_lst = []
+        for element in coefficient_lst:
+            publish_lst.append(misc.square_and_multiply(g, element, n))
+        if debug:
+            print("\nPublished info for verification: ", publish_lst)
 
         for i in range(1, 4):
-            # distribute shares
+            # distribute shares and verification info
             server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             # require a certificate from the cc Node
@@ -87,6 +105,8 @@ while True:
             ssl_sock.send("0".encode('ascii'))
             ssl_sock.send(str(shares_lst[i - 1]).encode('ascii'))
             ssl_sock.send(str(n).encode('ascii'))
+            ssl_sock.send(str(publish_lst).encode('ascii'))
+            ssl_sock.send(str(g).encode('ascii'))
             print("Done! Closing connection with CC node %s." % i)
             ssl_sock.close()
 
@@ -97,10 +117,10 @@ while True:
     # send public key to client
     print("\nSending public key to client...")
     f = open("id_rsa.pub", 'rb')
-    l = f.read(1024)
-    while l:
-        connstream.send(l)
-        l = f.read(1024)
+    byte = f.read(1024)
+    while byte:
+        connstream.send(byte)
+        byte = f.read(1024)
     f.close()
     print("Public key sent to client!")
 

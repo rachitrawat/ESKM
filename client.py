@@ -9,7 +9,7 @@ ssl_sock = ssl.wrap_socket(s,
                            ca_certs="certificates/CA.cert",
                            cert_reqs=ssl.CERT_REQUIRED)
 
-ssl_sock.connect((socket.gethostname(), 10038))
+ssl_sock.connect((socket.gethostname(), 10032))
 
 size = input("Enter RSA key size in bits: ")
 # request RSA key from server
