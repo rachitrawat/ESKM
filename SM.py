@@ -10,6 +10,7 @@ debug = False
 
 # local openssl dir
 LOCAL_OPENSSL = "/usr/local/ssl/bin/openssl "
+supported_key_size = ["1024", "2048", "4096"]
 
 GEN_RSA_PRIVATE = (LOCAL_OPENSSL + "genrsa -out private.pem 2048").split()
 GEN_RSA_PUBLIC = (LOCAL_OPENSSL + "rsa -in private.pem -outform PEM -pubout -out public.pem").split()
@@ -46,6 +47,8 @@ while True:
         print("New client has connected!")
         size = str(connstream.recv(4).decode('ascii'))
         print("\nRequested RSA key size: ", size)
+        if size not in supported_key_size:
+            size = "2048"
         GEN_RSA_PRIVATE[4] = size
         # generate private key
         call(GEN_RSA_PRIVATE)

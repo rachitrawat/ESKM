@@ -14,7 +14,14 @@ ssl_sock = ssl.wrap_socket(s,
 
 ssl_sock.connect((socket.gethostname(), 10030))
 
-size = input("Enter RSA modulus size in bits: ")
+supported_key_size = ["1024", "2048", "4096"]
+print("Supported key-size: 1024, 2048 (default), 4096")
+size = input("Enter RSA key-size in bits: ")
+
+if size not in supported_key_size:
+    size = "2048"
+
+print("Requesting %s bit RSA key..." % size)
 # request RSA key from server
 ssl_sock.send(size.encode('ascii'))
 
