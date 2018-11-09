@@ -4,7 +4,7 @@ from core.modules import misc
 
 
 def refresh_shares(n, l, k):
-    coefficient_list = []
+    coefficient_list = [0]
     shares_lst = []
 
     # Randomly choose k-1 degree elements from [0,n]
