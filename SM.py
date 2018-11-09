@@ -19,7 +19,7 @@ CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
 ROOT_DIR = os.getcwd()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10032))
+bindsocket.bind((socket.gethostname(), 10031))
 bindsocket.listen(5)
 print("Security Manager is running!")
 

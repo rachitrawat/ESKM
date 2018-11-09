@@ -3,8 +3,9 @@ import math
 import os
 import socket
 import ssl
+import threading
 
-from core.modules import misc, share_verification as sv
+from core.modules import misc, share_verification as sv, share_refresh as sr
 
 bindsocket = socket.socket()
 bindsocket.bind((socket.gethostname(), 4001))
@@ -13,6 +14,23 @@ print("CC_1 is running!")
 delta = math.factorial(3)
 ROOT_DIR = os.getcwd()
 node_no = 1
+l = 3
+k = 2
+
+
+def refresh_shares():
+    threading.Timer(10.0, refresh_shares).start()
+    if os.path.isfile("CC_1/share.txt"):
+        print("Starting share refresh protocol...")
+        with open("CC_1/share.txt") as f:
+            content = f.readlines()
+        content = [x.strip() for x in content]
+        share = (int(content[0]))
+        n = (int(content[1]))
+        coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
+
+
+# refresh_shares()
 
 while True:
     newsocket, fromaddr = bindsocket.accept()

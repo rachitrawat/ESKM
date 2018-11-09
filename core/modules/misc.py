@@ -5,12 +5,15 @@ import random
 '''
 
 
-def polynomial_eval(coeff_lst, x, p):
+def polynomial_eval(coeff_lst, x, p, modulo=True):
     deg = len(coeff_lst)
     sum = 0
 
     for i in range(0, deg):
-        sum = (sum * x + coeff_lst[deg - 1 - i]) % p
+        if modulo:
+            sum = (sum * x + coeff_lst[deg - 1 - i]) % p
+        else:
+            sum = (sum * x + coeff_lst[deg - 1 - i])
 
     return sum
 
