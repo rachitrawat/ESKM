@@ -1,9 +1,11 @@
 import socket
 import ssl
+from subprocess import call
 
 from core.modules import misc
 
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
+SET_PERM = "./fix_perm.sh"
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -29,6 +31,11 @@ ssl_sock.send(size.encode('ascii'))
 print("\nReceiving public key from SM...")
 misc.recv_file("/home/r/.ssh/id_rsa.pub", ssl_sock)
 print("Public key received!")
+# receive dummy private key
+print("\nReceiving dummy private key from SM...")
+misc.recv_file("/home/r/.ssh/id_rsa", ssl_sock)
+print("Dummy private key received!")
+call(SET_PERM)
 
 # close socket
 print("\nDone! Closing connection with SM.")
