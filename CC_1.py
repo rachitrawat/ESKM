@@ -12,7 +12,8 @@ bindsocket.bind((socket.gethostname(), 4001))
 bindsocket.listen(5)
 print("CC_1 is running!")
 delta = math.factorial(3)
-ROOT_DIR = os.getcwd()
+ROOT_DIR = "/tmp"
+CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 node_no = 1
 l = 3
 k = 2
@@ -36,8 +37,8 @@ while True:
     print("\nGot a connection from %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
-                                 certfile=ROOT_DIR + "/certificates/CC_1.cert",
-                                 keyfile=ROOT_DIR + "/certificates/CC_1.pkey",
+                                 certfile=CERT_DIR + "/CC_1.cert",
+                                 keyfile=CERT_DIR + "/CC_1.pkey",
                                  ssl_version=ssl.PROTOCOL_TLSv1)
 
     dir_ = ROOT_DIR + "/CC_1/"
@@ -50,9 +51,9 @@ while True:
         print("\nSM has connected!")
         # receive key-share
         print("Receiving data...")
-        misc.recv_file(dir_ + "data.txt", connstream)
+        misc.recv_file(dir_ + "sm_data.txt", connstream)
 
-        with open(dir_ + 'data.txt') as f:
+        with open(dir_ + 'sm_data.txt') as f:
             content = f.readlines()
         share = (int(content[0]))
         n = (int(content[1]))
@@ -72,22 +73,22 @@ while True:
     else:
         print("\nClient has connected!")
         # recv digest to be signed
-        misc.recv_file(dir_ + "digest.txt", connstream)
+        misc.recv_file(dir_ + "client_digest.txt", connstream)
 
-        with open(dir_ + 'digest.txt') as f:
+        with open(dir_ + 'client_digest.txt') as f:
             content = f.readlines()
         digest = (int(content[0]))
 
-        with open(dir_ + 'data.txt') as f:
+        with open(dir_ + 'sm_data.txt') as f:
             content = f.readlines()
         share = (int(content[0]))
         n = (int(content[1]))
         x = misc.square_and_multiply(digest, 2 * delta * share, n)
 
-        with open(dir_ + "client_data.txt", 'w+') as the_file:
+        with open(dir_ + "client_sig_data.txt", 'w+') as the_file:
             the_file.write(str(x) + "\n" + str(n))
         print("Sending signature data to client...")
-        misc.send_file(dir_ + "client_data.txt", connstream)
+        misc.send_file(dir_ + "client_sig_data.txt", connstream)
 
         # finished with client
         print("Done! Closing connection with client.")

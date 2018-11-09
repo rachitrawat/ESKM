@@ -16,7 +16,8 @@ GEN_RSA_PUBLIC = (LOCAL_OPENSSL + "rsa -in private.pem -outform PEM -pubout -out
 GET_RSA_MODULUS = (LOCAL_OPENSSL + "rsa -noout -modulus -in private.pem").split()
 GET_KEY_INFO = (LOCAL_OPENSSL + "rsa -in private.pem -text -inform PEM -noout").split()
 CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
-ROOT_DIR = os.getcwd()
+ROOT_DIR = "/tmp"
+CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 
 bindsocket = socket.socket()
 bindsocket.bind((socket.gethostname(), 10030))
@@ -33,8 +34,8 @@ while True:
     print("\nGot a connection from %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
-                                 certfile=ROOT_DIR + "/certificates/sm.cert",
-                                 keyfile=ROOT_DIR + "/certificates/sm.pkey",
+                                 certfile=CERT_DIR + "/SM.cert",
+                                 keyfile=CERT_DIR + "/SM.pkey",
                                  ssl_version=ssl.PROTOCOL_TLSv1)
 
     dir_ = ROOT_DIR + "/SM/" + fromaddr[0]
@@ -42,9 +43,8 @@ while True:
     if not os.path.exists(dir_):
         os.makedirs(dir_)
         os.chdir(dir_)
-        print(os.getcwd())
         print("New client has connected!")
-        size = str(connstream.recv(1024).decode('ascii'))
+        size = str(connstream.recv(4).decode('ascii'))
         print("\nRequested RSA key size: ", size)
         GEN_RSA_PRIVATE[4] = size
         # generate private key
@@ -97,15 +97,15 @@ while True:
 
             # require a certificate from the cc Node
             ssl_sock = ssl.wrap_socket(server_as_client,
-                                       ca_certs=ROOT_DIR + "/certificates/CA.cert",
+                                       ca_certs=CERT_DIR + "/CA.cert",
                                        cert_reqs=ssl.CERT_REQUIRED)
 
             print("\nUploading share to CC node %s ..." % i)
             ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
             ssl_sock.send("0".encode('ascii'))
-            with open("data_tmp.txt", "w+") as text_file:
+            with open("tmp_data.txt", "w+") as text_file:
                 text_file.write(str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(publish_lst) + "\n" + str(g))
-            misc.send_file("data_tmp.txt", ssl_sock)
+            misc.send_file("tmp_data.txt", ssl_sock)
             print("Done! Closing connection with CC node %s." % i)
             ssl_sock.close()
 
@@ -121,4 +121,3 @@ while True:
     # finished with client
     print("Done! Closing connection with client.")
     connstream.close()
-    os.chdir(ROOT_DIR)
