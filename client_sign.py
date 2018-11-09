@@ -1,11 +1,16 @@
 import errno
 import math
+import os
 import socket
 import ssl
 import sys
 from socket import error as socket_error
 
 from core.modules import lagrange_interpolation as lp, misc
+
+CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
+ROOT_DIR = "/tmp"
+os.chdir(ROOT_DIR)
 
 if sys.argv[1:] == ["debug"]:
     debug = True
@@ -14,13 +19,13 @@ else:
 
 # read Encoded Message (EM) from file
 # EM will be signed
-with open("/tmp/eskm_em.txt") as f:
+with open("eskm_em.txt") as f:
     content = f.readlines()
 
 em = ''.join(content)
 digest = int(em, 16)
 
-with open('/tmp/eskm_digest.txt', 'w+') as the_file:
+with open('eskm_digest.txt', 'w+') as the_file:
     the_file.write(str(digest))
 
 x = []
@@ -35,7 +40,7 @@ for i in range(1, 4):
 
     # require a certificate from the CC node
     ssl_sock = ssl.wrap_socket(s,
-                               ca_certs="/home/r/PycharmProjects/ESKM/certificates/CA.cert",
+                               ca_certs=CERT_DIR + "/CA.cert",
                                cert_reqs=ssl.CERT_REQUIRED)
 
     print("\nConnecting to CC_%s..." % i)
@@ -55,18 +60,18 @@ for i in range(1, 4):
     ssl_sock.send("1".encode('ascii'))
 
     # request sig from CC nodes
-    misc.send_file("/tmp/eskm_digest.txt", ssl_sock)
+    misc.send_file("eskm_digest.txt", ssl_sock)
 
     # receive sig data
-    print("Receiving sig fragment and modulus from CC_%s..." % i)
-    misc.recv_file("/tmp/eskm_cc_data.txt", ssl_sock)
+    print("Receiving sig data from CC_%s..." % i)
+    misc.recv_file("eskm_cc_sig_data.txt", ssl_sock)
 
-    with open("/tmp/eskm_cc_data.txt") as f:
+    with open("eskm_cc_sig_data.txt") as f:
         content = f.readlines()
     x.append(int(content[0]))
     n = (int(content[1]))
 
-    print("Sig fragment and modulus received!")
+    print("Sig data received!")
 
     # close socket
     print("Done! Closing connection with CC_%s..." % i)
@@ -78,7 +83,7 @@ for i in range(1, 4):
 
 if len(online_nodes) != k:
     print("\nLess than %s nodes online. Signature generation failed!" % k)
-    with open('/tmp/eskm_sig.txt', 'w+') as the_file:
+    with open('eskm_sig.txt', 'w+') as the_file:
         the_file.write("-1")
 else:
     w = 1
@@ -110,5 +115,5 @@ else:
         j += 1
 
     # write signature to file
-    with open('/tmp/eskm_sig.txt', 'w+') as the_file:
+    with open('eskm_sig.txt', 'w+') as the_file:
         the_file.write(' '.join(lst2))

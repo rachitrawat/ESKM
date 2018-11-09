@@ -3,16 +3,18 @@ import ssl
 
 from core.modules import misc
 
+CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # require a certificate from the server
 ssl_sock = ssl.wrap_socket(s,
-                           ca_certs="certificates/CA.cert",
+                           ca_certs=CERT_DIR + "/CA.cert",
                            cert_reqs=ssl.CERT_REQUIRED)
 
 ssl_sock.connect((socket.gethostname(), 10030))
 
-size = input("Enter RSA key size in bits: ")
+size = input("Enter RSA modulus size in bits: ")
 # request RSA key from server
 ssl_sock.send(size.encode('ascii'))
 
