@@ -24,7 +24,6 @@ def refresh_shares():
         print("Starting share refresh protocol...")
         with open("CC_1/share.txt") as f:
             content = f.readlines()
-        content = [x.strip() for x in content]
         share = (int(content[0]))
         n = (int(content[1]))
         coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
@@ -46,28 +45,25 @@ while True:
         os.makedirs(dir_)
 
     # check if SM or client is connecting
-    flag = str(connstream.recv(1024).decode('ascii'))
+    flag = str(connstream.recv(1).decode('ascii'))
     if flag == "0":
         print("\nSM has connected!")
         # receive key-share
-        print("Receiving share...")
-        share = str(connstream.recv(1024).decode('ascii'))
-        # receive RSA modulus
-        print("Receiving RSA modulus...")
-        n = int(connstream.recv(1024).decode('ascii'))
-        # receive verification values
-        print("Receiving verification values...")
-        str_lst = connstream.recv(1024).decode('ascii')
-        publish_lst = ast.literal_eval(str_lst)
-        g = int(connstream.recv(1024).decode('ascii'))
+        print("Receiving data...")
+        misc.recv_file(dir_ + "data.txt", connstream)
+
+        with open(dir_ + 'data.txt') as f:
+            content = f.readlines()
+        share = (int(content[0]))
+        n = (int(content[1]))
+        publish_lst = ast.literal_eval(content[2])
+        g = (int(content[3]))
 
         # share verification
         if not sv.verify_share(node_no, misc.square_and_multiply(g, int(share), n), publish_lst, n):
             print("Share verification: FAILED")
         else:
             print("Share verification: OK")
-            with open(dir_ + 'share.txt', 'w+') as the_file:
-                the_file.write(share + "\n" + str(n))
 
         # finished with SM
         print("Done! Closing connection with SM.")
@@ -76,17 +72,23 @@ while True:
     else:
         print("\nClient has connected!")
         # recv digest to be signed
-        digest = int(connstream.recv(1024).decode('ascii'))
-        with open(dir_ + 'share.txt') as f:
+        misc.recv_file(dir_ + "digest.txt", connstream)
+
+        with open(dir_ + 'digest.txt') as f:
             content = f.readlines()
-        content = [x.strip() for x in content]
+        digest = (int(content[0]))
+
+        with open(dir_ + 'data.txt') as f:
+            content = f.readlines()
         share = (int(content[0]))
         n = (int(content[1]))
         x = misc.square_and_multiply(digest, 2 * delta * share, n)
-        print("Sending signature fragment to client...")
-        connstream.send(str(x).encode('ascii'))
-        print("Sending RSA modulus to client...")
-        connstream.send(str(n).encode('ascii'))
+
+        with open(dir_ + "client_data.txt", 'w+') as the_file:
+            the_file.write(str(x) + "\n" + str(n))
+        print("Sending signature data to client...")
+        misc.send_file(dir_ + "client_data.txt", connstream)
+
         # finished with client
         print("Done! Closing connection with client.")
         connstream.close()

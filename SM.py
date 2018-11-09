@@ -8,18 +8,18 @@ from core.modules import secret_sharing as ss, misc
 
 debug = False
 
-# use local openssl
-OPENSSL = "/usr/local/ssl/bin/openssl "
+# local openssl dir
+LOCAL_OPENSSL = "/usr/local/ssl/bin/openssl "
 
-GEN_RSA_PRIVATE = (OPENSSL + "genrsa -out private.pem 2048").split()
-GEN_RSA_PUBLIC = (OPENSSL + "rsa -in private.pem -outform PEM -pubout -out public.pem").split()
-GET_RSA_MODULUS = (OPENSSL + "rsa -noout -modulus -in private.pem").split()
-GET_KEY_INFO = (OPENSSL + "rsa -in private.pem -text -inform PEM -noout").split()
+GEN_RSA_PRIVATE = (LOCAL_OPENSSL + "genrsa -out private.pem 2048").split()
+GEN_RSA_PUBLIC = (LOCAL_OPENSSL + "rsa -in private.pem -outform PEM -pubout -out public.pem").split()
+GET_RSA_MODULUS = (LOCAL_OPENSSL + "rsa -noout -modulus -in private.pem").split()
+GET_KEY_INFO = (LOCAL_OPENSSL + "rsa -in private.pem -text -inform PEM -noout").split()
 CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
 ROOT_DIR = os.getcwd()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10031))
+bindsocket.bind((socket.gethostname(), 10030))
 bindsocket.listen(5)
 print("Security Manager is running!")
 
@@ -103,10 +103,9 @@ while True:
             print("\nUploading share to CC node %s ..." % i)
             ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
             ssl_sock.send("0".encode('ascii'))
-            ssl_sock.send(str(shares_lst[i - 1]).encode('ascii'))
-            ssl_sock.send(str(n).encode('ascii'))
-            ssl_sock.send(str(publish_lst).encode('ascii'))
-            ssl_sock.send(str(g).encode('ascii'))
+            with open("data_tmp.txt", "w+") as text_file:
+                text_file.write(str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(publish_lst) + "\n" + str(g))
+            misc.send_file("data_tmp.txt", ssl_sock)
             print("Done! Closing connection with CC node %s." % i)
             ssl_sock.close()
 
@@ -116,12 +115,7 @@ while True:
     os.chdir(dir_)
     # send public key to client
     print("\nSending public key to client...")
-    f = open("id_rsa.pub", 'rb')
-    byte = f.read(1024)
-    while byte:
-        connstream.send(byte)
-        byte = f.read(1024)
-    f.close()
+    misc.send_file("id_rsa.pub", connstream)
     print("Public key sent to client!")
 
     # finished with client

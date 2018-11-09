@@ -1,3 +1,4 @@
+import os
 import random
 
 '''
@@ -136,7 +137,9 @@ def generate_safe_prime(keysize=300):
 
 
 # TODO
-# function implementing Chinese remainder theorem
+''' Chinese Remainder Theorem '''
+
+
 # list m contains all the modulii
 # list x contains the remainders of the equations
 def crt(m, x):
@@ -181,3 +184,57 @@ def crt(m, x):
 
     # returns the remainder of the final equation
     return x[0]
+
+
+def send_file(file_path, socket_obj):
+    # max recv bytes size
+    BYTES_RECV = 1024
+
+    statinfo = os.stat(file_path)
+    file_size = statinfo.st_size
+
+    # encode filesize as 32 bit binary
+    fsize_b = bin(file_size)[2:].zfill(32)
+    socket_obj.send(fsize_b.encode('ascii'))
+
+    # send file
+    f = open(file_path, 'rb')
+
+    while file_size >= BYTES_RECV:
+        l = f.read(BYTES_RECV)
+        socket_obj.send(l)
+        file_size -= BYTES_RECV
+
+    if file_size > 0:
+        l = f.read(file_size)
+        socket_obj.send(l)
+
+    f.close()
+
+
+def recv_file(file_path, socket_obj):
+    # max recv bytes size
+    BYTES_RECV = 1024
+
+    # recv file size
+    fsize_b = socket_obj.recv(32).decode('ascii')
+    fsize = int(fsize_b, 2)
+
+    # recv file
+    f = open(file_path, 'wb')
+    file_size = fsize
+
+    while file_size >= BYTES_RECV:
+        buff = bytearray()
+        while len(buff) < BYTES_RECV:
+            buff.extend(socket_obj.recv(BYTES_RECV - len(buff)))
+        f.write(buff)
+        file_size -= BYTES_RECV
+
+    if file_size > 0:
+        buff = bytearray()
+        while len(buff) < file_size:
+            buff.extend(socket_obj.recv(file_size - len(buff)))
+        f.write(buff)
+
+    f.close()

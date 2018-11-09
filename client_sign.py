@@ -20,6 +20,9 @@ with open("/tmp/eskm_em.txt") as f:
 em = ''.join(content)
 digest = int(em, 16)
 
+with open('/tmp/eskm_digest.txt', 'w+') as the_file:
+    the_file.write(str(digest))
+
 x = []
 delta = math.factorial(3)
 n = 0
@@ -52,12 +55,17 @@ for i in range(1, 4):
     ssl_sock.send("1".encode('ascii'))
 
     # request sig from CC nodes
-    ssl_sock.send(str(digest).encode('ascii'))
+    misc.send_file("/tmp/eskm_digest.txt", ssl_sock)
 
-    # receive sig fragment
+    # receive sig data
     print("Receiving sig fragment and modulus from CC_%s..." % i)
-    x.append(int(ssl_sock.recv(1024).decode('ascii')))
-    n = int(ssl_sock.recv(1024).decode('ascii'))
+    misc.recv_file("/tmp/eskm_cc_data.txt", ssl_sock)
+
+    with open("/tmp/eskm_cc_data.txt") as f:
+        content = f.readlines()
+    x.append(int(content[0]))
+    n = (int(content[1]))
+
     print("Sig fragment and modulus received!")
 
     # close socket

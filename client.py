@@ -1,6 +1,7 @@
-import os
 import socket
 import ssl
+
+from core.modules import misc
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -9,7 +10,7 @@ ssl_sock = ssl.wrap_socket(s,
                            ca_certs="certificates/CA.cert",
                            cert_reqs=ssl.CERT_REQUIRED)
 
-ssl_sock.connect((socket.gethostname(), 10031))
+ssl_sock.connect((socket.gethostname(), 10030))
 
 size = input("Enter RSA key size in bits: ")
 # request RSA key from server
@@ -17,12 +18,7 @@ ssl_sock.send(size.encode('ascii'))
 
 # receive public key
 print("\nReceiving public key from SM...")
-with open('/home/r/.ssh/id_rsa.pub', 'wb') as f:
-    while True:
-        data = ssl_sock.recv(1024)
-        if not data:
-            break
-        f.write(data)
+misc.recv_file("/home/r/.ssh/id_rsa.pub", ssl_sock)
 print("Public key received!")
 
 # close socket
