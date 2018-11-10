@@ -111,7 +111,9 @@ while True:
             ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
             ssl_sock.send("0".encode('ascii'))
             with open("tmp_data.txt", "w+") as text_file:
-                text_file.write(str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(publish_lst) + "\n" + str(g))
+                text_file.write(
+                    str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(publish_lst) + "\n" + str(g) + "\n" + str(
+                        l) + "\n" + str(k))
             misc.send_file("tmp_data.txt", ssl_sock)
             print("Done! Closing connection with CC node %s." % i)
             ssl_sock.close()
