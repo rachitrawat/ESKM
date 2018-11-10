@@ -3,7 +3,7 @@ import re
 import socket
 import ssl
 from subprocess import call, check_output
-
+import time
 from core.modules import secret_sharing as ss, misc
 
 debug = False
@@ -98,6 +98,8 @@ while True:
         if debug:
             print("\nPublished info for verification: ", publish_lst)
 
+        timestamp = time.time()
+
         for i in range(1, 4):
             # distribute shares and verification info
             server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -113,7 +115,7 @@ while True:
             with open("tmp_data.txt", "w+") as text_file:
                 text_file.write(
                     str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(publish_lst) + "\n" + str(g) + "\n" + str(
-                        l) + "\n" + str(k))
+                        l) + "\n" + str(k) + "\n" + str(timestamp))
             misc.send_file("tmp_data.txt", ssl_sock)
             print("Done! Closing connection with CC node %s." % i)
             ssl_sock.close()

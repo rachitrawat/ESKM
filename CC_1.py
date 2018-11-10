@@ -43,7 +43,7 @@ def start_refresh_protocol():
     threading.Timer(60.0, start_refresh_protocol).start()
 
     if os.path.isfile("timestamp.txt"):
-        # read current timestamp
+        # read timestamp
         content = misc.read_file("timestamp.txt")
         timestamp = float(content[0])
         # current timestamp
@@ -142,10 +142,11 @@ def listen():
 
             with open('sm_data.txt') as f:
                 content = f.readlines()
-            share = (int(content[0]))
-            n = (int(content[1]))
+            share = int(content[0])
+            n = int(content[1])
             publish_lst = ast.literal_eval(content[2])
-            g = (int(content[3]))
+            g = int(content[3])
+            timestamp = float(content[6])
 
             # share verification
             if not sv.verify_share(node_no, misc.square_and_multiply(g, int(share), n), publish_lst, n):
@@ -155,7 +156,7 @@ def listen():
 
             # write timestamp
             with open("timestamp.txt", "w+") as text_file:
-                text_file.write(str(time.time()))
+                text_file.write(str(timestamp))
 
             # finished with SM
             print("Done! Closing connection with SM.")
@@ -248,4 +249,4 @@ def listen():
 
 listen_thread = threading.Thread(target=listen)
 listen_thread.start()
-start_refresh_protocol()
+# start_refresh_protocol()
