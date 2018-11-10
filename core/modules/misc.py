@@ -163,11 +163,11 @@ def crt(m, x):
 ''' robust file transfer methods '''
 
 
-def send_file(file_path, socket_obj):
+def send_file(file_name, socket_obj):
     # max recv bytes size
     BYTES_RECV = 1024
 
-    statinfo = os.stat(file_path)
+    statinfo = os.stat(file_name)
     file_size = statinfo.st_size
 
     # encode filesize as 32 bit binary
@@ -175,7 +175,7 @@ def send_file(file_path, socket_obj):
     socket_obj.send(fsize_b.encode('ascii'))
 
     # send file
-    f = open(file_path, 'rb')
+    f = open(file_name, 'rb')
 
     while file_size >= BYTES_RECV:
         l = f.read(BYTES_RECV)
@@ -189,7 +189,7 @@ def send_file(file_path, socket_obj):
     f.close()
 
 
-def recv_file(file_path, socket_obj):
+def recv_file(file_name, socket_obj):
     # max recv bytes size
     BYTES_RECV = 1024
 
@@ -198,7 +198,7 @@ def recv_file(file_path, socket_obj):
     fsize = int(fsize_b, 2)
 
     # recv file
-    f = open(file_path, 'wb')
+    f = open(file_name, 'wb')
     file_size = fsize
 
     while file_size >= BYTES_RECV:
@@ -215,3 +215,14 @@ def recv_file(file_path, socket_obj):
         f.write(buff)
 
     f.close()
+
+
+def write_file(file_name, string):
+    with open(file_name, 'w+') as f:
+        f.write(string)
+
+
+def read_file(file_name):
+    with open(file_name) as f:
+        content = f.readlines()
+    return content
