@@ -14,7 +14,6 @@ from core.modules import misc, share_verification as sv, share_refresh as sr
 node_no = 1
 bindsocket = socket.socket()
 bindsocket.bind((socket.gethostname(), 4000 + node_no))
-bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 bindsocket.listen(5)
 delta = math.factorial(3)
 
@@ -42,55 +41,61 @@ print(CC + " is running!")
 def refresh_shares():
     mutex.acquire()
     threading.Timer(10.0, refresh_shares).start()
-    if os.path.isfile("sm_data.txt"):
-        print("\n*** Starting share refresh protocol ***")
 
-        with open("timestamp.txt", "w+") as text_file:
-            text_file.write(str(time.time()))
-
-        with open("sm_data.txt") as f:
+    if os.path.isfile("timestamp.txt"):
+        with open("timestamp.txt") as f:
             content = f.readlines()
-        share = (int(content[0]))
-        n = (int(content[1]))
-        l = (int(content[4]))
-        k = (int(content[5]))
-        coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
+        timestamp = float(content[0])
+        new_timestamp = time.time()
+        if abs(timestamp - new_timestamp) > 60:
+            print("\n*** Starting share refresh protocol ***")
 
-        for i in range(1, 4):
-            if i != node_no:
-                cc_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            with open("new_timestamp.txt", "w+") as text_file:
+                text_file.write(str(new_timestamp))
 
-                # require a certificate from the cc Node
-                ssl_sock = ssl.wrap_socket(cc_as_client,
-                                           ca_certs=CERT_DIR + "CA.cert",
-                                           cert_reqs=ssl.CERT_REQUIRED)
+            with open("sm_data.txt") as f:
+                content = f.readlines()
+            share = (int(content[0]))
+            n = (int(content[1]))
+            l = (int(content[4]))
+            k = (int(content[5]))
+            coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
 
-                print("\nConnecting to CC node %s..." % i)
-                try:
-                    ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
-                except socket_error as serr:
-                    if serr.errno != errno.ECONNREFUSED:
-                        raise serr
-                    print("Connection to CC_%s failed!" % i)
-                    continue
-                print("Connected to CC node %s!" % i)
-                # send flag
-                ssl_sock.send("2".encode('ascii'))
-                # send node no
-                ssl_sock.send(str(node_no).encode('ascii'))
-                # send timestamp
-                misc.send_file("timestamp.txt", ssl_sock)
-                choice = ssl_sock.recv(1).decode('ascii')
-                if choice == "1":
-                    print("CC node %s agreed to refresh shares!" % i)
-                    print("Sending refreshed share to CC node %s..." % i)
-                    with open("new_share.txt", "w+") as text_file:
-                        text_file.write(str(shares_lst[i - 1]))
-                    misc.send_file("new_share.txt", ssl_sock)
-                    # recv new share
-                    # TODO
-                elif choice == "0":
-                    print("CC node %s denied to refresh shares!" % i)
+            for i in range(1, 4):
+                if i != node_no:
+                    cc_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+                    # require a certificate from the cc Node
+                    ssl_sock = ssl.wrap_socket(cc_as_client,
+                                               ca_certs=CERT_DIR + "CA.cert",
+                                               cert_reqs=ssl.CERT_REQUIRED)
+
+                    print("\nConnecting to CC node %s..." % i)
+                    try:
+                        ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
+                    except socket_error as serr:
+                        if serr.errno != errno.ECONNREFUSED:
+                            raise serr
+                        print("Connection to CC_%s failed!" % i)
+                        continue
+                    print("Connected to CC node %s!" % i)
+                    # send flag
+                    ssl_sock.send("2".encode('ascii'))
+                    # send node no
+                    ssl_sock.send(str(node_no).encode('ascii'))
+                    # send timestamp
+                    misc.send_file("new_timestamp.txt", ssl_sock)
+                    choice = ssl_sock.recv(1).decode('ascii')
+                    if choice == "1":
+                        print("CC node %s agreed to refresh shares!" % i)
+                        print("Sending refreshed share to CC node %s..." % i)
+                        with open("new_share.txt", "w+") as text_file:
+                            text_file.write(str(shares_lst[i - 1]))
+                        misc.send_file("new_share.txt", ssl_sock)
+                        # recv new share
+                        # TODO
+                    elif choice == "0":
+                        print("CC node %s denied to refresh shares!" % i)
     mutex.release()
 
 
@@ -125,6 +130,10 @@ def listen():
                 print("Share verification: FAILED")
             else:
                 print("Share verification: OK")
+
+            # write timestamp
+            with open("timestamp.txt", "w+") as text_file:
+                text_file.write(str(time.time()))
 
             # finished with SM
             print("Done! Closing connection with SM.")
