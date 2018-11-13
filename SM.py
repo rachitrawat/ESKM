@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import socket
 import ssl
 from subprocess import call, check_output
@@ -8,8 +9,9 @@ from core.modules import secret_sharing as ss, misc
 
 debug = False
 
-# local openssl dir
+# local openssl (patched)
 LOCAL_OPENSSL = "/usr/local/ssl/bin/openssl "
+# bin openssl
 OPENSSL = "/usr/bin/openssl "
 
 supported_key_size = ["1024", "2048", "4096"]
@@ -20,6 +22,7 @@ GEN_RSA_PUBLIC = (LOCAL_OPENSSL + "rsa -in private.pem -outform PEM -pubout -out
 GET_RSA_MODULUS = (LOCAL_OPENSSL + "rsa -noout -modulus -in private.pem").split()
 GET_KEY_INFO = (LOCAL_OPENSSL + "rsa -in private.pem -text -inform PEM -noout").split()
 CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
+
 ROOT_DIR = "/tmp"
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 
@@ -58,7 +61,7 @@ while True:
         call(GEN_RSA_PRIVATE)
         # generate public key
         call(GEN_RSA_PUBLIC)
-        # convert to ssh format
+        # convert pubkey to ssh format
         pub = (check_output(CONVERT_SSH_PUB)).decode('utf-8')
 
         with open("id_rsa.pub", "w+") as text_file:
@@ -67,7 +70,7 @@ while True:
         # extract information from private key
         data = (check_output(GET_KEY_INFO)).decode('utf-8')
 
-        # key data in decimal
+        # key data
         e = 65537
         n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
         # use regex to extract hex and convert to decimal
@@ -112,16 +115,13 @@ while True:
             print("\nUploading share to CC node %s ..." % i)
             ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
             ssl_sock.send("0".encode('ascii'))
-            with open("tmp_data.txt", "w+") as text_file:
+            with open("sm_data.txt", "w+") as text_file:
                 text_file.write(
                     str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(publish_lst) + "\n" + str(g) + "\n" + str(
                         l) + "\n" + str(k) + "\n" + str(timestamp))
-            misc.send_file("tmp_data.txt", ssl_sock)
+            misc.send_file("sm_data.txt", ssl_sock)
             print("Done! Closing connection with CC node %s." % i)
             ssl_sock.close()
-
-    else:
-        print("Old client has connected!")
 
     os.chdir(dir_)
     # send public key to client
@@ -137,4 +137,6 @@ while True:
 
     # finished with client
     print("Done! Closing connection with client.")
+    # remove files
+    shutil.rmtree(dir_)
     connstream.close()
