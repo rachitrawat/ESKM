@@ -67,19 +67,18 @@ def start_refresh_protocol():
     if os.path.isfile("sm_data.txt"):
         set_vars()
         expected_timestamp = timestamp + 60
-        print(timestamp, expected_timestamp)
-        print("\n*** Starting share refresh protocol ***")
-        print("Timestamp:", timestamp)
+        print("\n*** Share Refresh Protocol ***")
+        print("Current Timestamp:", timestamp)
         print("Expected Timestamp:", expected_timestamp)
 
         if expected_timestamp in send_refresh_data:
-            print("No need to create random zero polynomial!")
+            print("Random zero polynomial already exists!")
         else:
             send_refresh_data[expected_timestamp] = {}
             recvd_refresh_data[expected_timestamp] = {}
 
             # shares of a random zero polynomial
-            print("Creating random zero polynomial...")
+            print("Creating a random zero polynomial...")
             coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
 
             # need to send theses shares
@@ -88,9 +87,6 @@ def start_refresh_protocol():
 
             # local node share
             recvd_refresh_data[expected_timestamp][local_node_id] = shares_lst[local_node_id - 1]
-
-        print("\nBefore Send Refresh Data:", send_refresh_data)
-        print("\nBefore Recvd Refresh Data:", recvd_refresh_data)
 
         # start refresh protocol from other CC nodes
         for i in range(1, l + 1):
@@ -139,16 +135,13 @@ def start_refresh_protocol():
 
                 recvd_refresh_data[expected_timestamp][i] = recv_share
 
-        print("\nAfter Send Refresh Data:", send_refresh_data)
-        print("\nAfter Recvd Refresh Data:", recvd_refresh_data)
-        print("\nNew shares:%s Required:%s" % (len(recvd_refresh_data[expected_timestamp]), k))
+        print("\nShares:%s Required:%s" % (len(recvd_refresh_data[expected_timestamp]), k))
         count += 1
-        print("\nCount:", count)
+        print("Iteration:%s/3" % count)
 
         if count == 3:
             refresh_share()
             count = 0
-
 
     mutex.release()
 
