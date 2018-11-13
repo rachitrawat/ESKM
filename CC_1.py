@@ -5,27 +5,30 @@ import os
 import socket
 import ssl
 import threading
-import time
 from socket import error as socket_error
-from subprocess import call
 
 from core.modules import misc, share_verification as sv, share_refresh as sr
-
-node_no = 1
-bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 4000 + node_no))
-bindsocket.listen(5)
-delta = math.factorial(3)
-
-l = 0
-k = 0
 
 UPDATE_TIMESTAMP = "cp new_timestamp.txt timestamp.txt".split()
 
 ROOT_DIR = "/tmp/"
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates/"
 
-CC = "CC_" + str(node_no)
+# variables
+
+local_node_id = 1
+share = 0
+n = 0
+publish_lst = []
+g = 0
+l = 0
+k = 0
+timestamp = 0
+expected_timestamp = 0
+send_refresh_data = {}
+recvd_refresh_data = {}
+
+CC = "CC_" + str(local_node_id)
 dir_ = ROOT_DIR + CC
 
 if not os.path.exists(dir_):
@@ -35,89 +38,124 @@ os.chdir(dir_)
 
 mutex = threading.Lock()
 
+bindsocket = socket.socket()
+bindsocket.bind((socket.gethostname(), 4000 + local_node_id))
+bindsocket.listen(5)
+delta = math.factorial(3)
 print(CC + " is running!")
 
 
+def set_vars():
+    global share, n, publish_lst, g, l, k, timestamp
+    with open('sm_data.txt') as f:
+        content = f.readlines()
+    share = int(content[0])
+    n = int(content[1])
+    publish_lst = ast.literal_eval(content[2])
+    g = int(content[3])
+    l = int(content[4])
+    k = int(content[5])
+    timestamp = float(content[6])
+
+
 def start_refresh_protocol():
+    threading.Timer(30.0, start_refresh_protocol).start()
     mutex.acquire()
-    threading.Timer(60.0, start_refresh_protocol).start()
+    set_vars()
+    global timestamp, expected_timestamp, share
+    expected_timestamp = timestamp + 60
 
-    if os.path.isfile("timestamp.txt"):
-        # read timestamp
-        content = misc.read_file("timestamp.txt")
-        timestamp = float(content[0])
-        # current timestamp
-        new_timestamp = time.time()
+    if os.path.isfile("sm_data.txt"):
+        print("\n*** Starting share refresh protocol ***")
+        print("Timestamp:", timestamp)
+        print("Expected Timestamp:", expected_timestamp)
 
-        # if timestamp diff > 60 s
-        if abs(timestamp - new_timestamp) > 60:
-            print("\n*** Starting share refresh protocol ***")
-
-            misc.write_file("new_timestamp.txt", str(new_timestamp))
-
-            # read data sent by SM
-            content = misc.read_file("sm_data.txt")
-            share = (int(content[0]))
-            n = (int(content[1]))
-            publish_lst = ast.literal_eval(content[2])
-            g = (int(content[3]))
-            l = (int(content[4]))
-            k = (int(content[5]))
+        if expected_timestamp in send_refresh_data:
+            print("No need to create random zero polynomial!")
+        else:
+            send_refresh_data[expected_timestamp] = {}
+            recvd_refresh_data[expected_timestamp] = {}
 
             # shares of a random zero polynomial
+            print("Creating random zero polynomial...")
             coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
 
-            # Request to start refresh protocol from other CC nodes
-            for i in range(1, l + 1):
-                if i != node_no:
-                    cc_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # need to send theses shares
+            for idx, val in enumerate(shares_lst):
+                send_refresh_data[expected_timestamp][idx + 1] = val
 
-                    # require a certificate from the CC Node
-                    ssl_sock = ssl.wrap_socket(cc_as_client,
-                                               ca_certs=CERT_DIR + "CA.cert",
-                                               cert_reqs=ssl.CERT_REQUIRED)
+            # local node share
+            recvd_refresh_data[expected_timestamp][local_node_id] = shares_lst[local_node_id - 1]
 
-                    print("\nConnecting to CC node %s..." % i)
-                    try:
-                        ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
-                    except socket_error as serr:
-                        if serr.errno != errno.ECONNREFUSED:
-                            raise serr
-                        print("Connection to CC_%s failed!" % i)
+        print("\nBefore Send Refresh Data:", send_refresh_data)
+        print("\nBefore Recvd Refresh Data:", recvd_refresh_data)
+
+        # start refresh protocol from other CC nodes
+        for i in range(1, l + 1):
+            if i != local_node_id:
+                cc_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+                # require a certificate from the CC Node
+                ssl_sock = ssl.wrap_socket(cc_as_client,
+                                           ca_certs=CERT_DIR + "CA.cert",
+                                           cert_reqs=ssl.CERT_REQUIRED)
+
+                print("\nConnecting to CC node %s..." % i)
+                try:
+                    ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
+                except socket_error as serr:
+                    if serr.errno != errno.ECONNREFUSED:
+                        raise serr
+                    print("Connection to CC_%s failed!" % i)
+                    continue
+                print("Connected to CC node %s!" % i)
+
+                # send flag
+                ssl_sock.send("2".encode('ascii'))
+                # send node no
+                ssl_sock.send(str(local_node_id).encode('ascii'))
+                # send expected timestamp
+                misc.write_file("expected_timestamp.txt", str(timestamp + 60))
+                misc.send_file("expected_timestamp.txt", ssl_sock)
+
+                # recv new share
+                misc.recv_file("recv_share.txt", ssl_sock)
+                content = misc.read_file("recv_share.txt")
+                recv_share = int(content[0])
+                recv_timestamp = float(content[1])
+
+                if recv_timestamp != "-1" and recv_timestamp == expected_timestamp:
+                    print("Timestamp:OK")
+                    if recv_share != "-1":
+                        print("Share:OK")
+                    else:
+                        print("Share:FAIL")
                         continue
-                    print("Connected to CC node %s!" % i)
+                else:
+                    print("Timestamp:FAIL")
+                    continue
 
-                    # send flag
-                    ssl_sock.send("2".encode('ascii'))
-                    # send node no
-                    ssl_sock.send(str(node_no).encode('ascii'))
-                    # send timestamp
-                    misc.send_file("new_timestamp.txt", ssl_sock)
-                    # recv choice
-                    choice = ssl_sock.recv(1).decode('ascii')
+                recvd_refresh_data[expected_timestamp][i] = recv_share
 
-                    if choice == "1":
-                        print("CC node %s agreed to refresh shares!" % i)
-                        print("Sending refreshed share to CC node %s..." % i)
-                        # send new share
-                        misc.write_file("new_share.txt", str(shares_lst[i - 1]))
-                        misc.send_file("new_share.txt", ssl_sock)
+        print("\nAfter Send Refresh Data:", send_refresh_data)
+        print("\nAfter Recvd Refresh Data:", recvd_refresh_data)
+        print("\nNew shares:%s Required:%s" % (len(recvd_refresh_data[expected_timestamp]), k))
 
-                        # recv new share
-                        misc.recv_file("recv_share.txt", ssl_sock)
-                        content = misc.read_file("recv_share.txt")
-                        recv_share = (int(content[0]))
+        if len(recvd_refresh_data[expected_timestamp]) >= k:
+            sum = share
+            for node, new_share in recvd_refresh_data[expected_timestamp].items():
+                sum += new_share
 
-                        misc.write_file("sm_data.txt",
-                                        str(share + shares_lst[node_no - 1] + recv_share) + "\n" + str(n) + "\n" + str(
-                                            publish_lst) + "\n" + str(g) + "\n" + str(
-                                            l) + "\n" + str(k))
-                        print("Shares updated!")
-                        # update timestamp
-                        call(UPDATE_TIMESTAMP)
+            # update everything
+            misc.write_file("sm_data.txt",
+                            str(sum) + "\n" + str(
+                                n) + "\n" + str(
+                                publish_lst) + "\n" + str(g) + "\n" + str(
+                                l) + "\n" + str(k) + "\n" + str(timestamp))
+            print("Shares refreshed!")
+        else:
+            print("Share refresh failed!")
 
-                    elif choice == "0":
-                        print("CC node %s denied to refresh shares!" % i)
     mutex.release()
 
 
@@ -125,6 +163,7 @@ def listen():
     while True:
         newsocket, fromaddr = bindsocket.accept()
         mutex.acquire()
+        global share, g, n, publish_lst, timestamp, expected_timestamp
         print("\nGot a connection from %s" % str(fromaddr))
         connstream = ssl.wrap_socket(newsocket,
                                      server_side=True,
@@ -134,29 +173,19 @@ def listen():
 
         # check if SM or client or CC is connecting
         flag = str(connstream.recv(1).decode('ascii'))
+
         if flag == "0":
             print("\nSM has connected!")
             # receive key-share
             print("Receiving data...")
             misc.recv_file("sm_data.txt", connstream)
-
-            with open('sm_data.txt') as f:
-                content = f.readlines()
-            share = int(content[0])
-            n = int(content[1])
-            publish_lst = ast.literal_eval(content[2])
-            g = int(content[3])
-            timestamp = float(content[6])
+            set_vars()
 
             # share verification
-            if not sv.verify_share(node_no, misc.square_and_multiply(g, int(share), n), publish_lst, n):
+            if not sv.verify_share(local_node_id, misc.square_and_multiply(g, int(share), n), publish_lst, n):
                 print("Share verification: FAILED")
             else:
                 print("Share verification: OK")
-
-            # write timestamp
-            with open("timestamp.txt", "w+") as text_file:
-                text_file.write(str(timestamp))
 
             # finished with SM
             print("Done! Closing connection with SM.")
@@ -186,59 +215,34 @@ def listen():
             print("Done! Closing connection with client.")
             connstream.close()
 
-        # share refresh request
+        # new share fetch request
         elif flag == "2":
+            global timestamp
             node_id = int(connstream.recv(1).decode('ascii'))
-            print("\nCC node %s has connected!" % node_id)
-            misc.recv_file("recv_timestamp.txt", connstream)
+            print("\nCC node %s has connected to fetch new shares!" % node_id)
 
-            # recv new timestamp
-            content = misc.read_file("recv_timestamp.txt")
-            recv_timestamp = float(content[0])
+            # recv expected timestamp
+            misc.recv_file("recv_expected_timestamp.txt", connstream)
+            content = misc.read_file("recv_expected_timestamp.txt")
+            recv_expected_timestamp = float(content[0])
 
-            # read local timestamp
-            content = misc.read_file("timestamp.txt")
-            timestamp = float(content[0])
+            str1 = "-1"
+            str2 = "-1"
 
-            # if timestamp diff > 60 s
-            if abs(recv_timestamp - timestamp) > 60:
-                print("Timestamp too old. Agree to refresh shares!")
-                connstream.send("1".encode('ascii'))
-
-                print("Receiving new share from node %s..." % node_id)
-                misc.recv_file("recv_share.txt", connstream)
-
-                content = misc.read_file("recv_share.txt")
-                recv_share = (int(content[0]))
-
-                # read data sent by SM
-                content = misc.read_file("sm_data.txt")
-                share = (int(content[0]))
-                n = (int(content[1]))
-                publish_lst = ast.literal_eval(content[2])
-                g = (int(content[3]))
-                l = (int(content[4]))
-                k = (int(content[5]))
-
-                # shares of a random zero polynomial
-                coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
-                misc.write_file("new_share.txt", str(shares_lst[node_id - 1]))
-                # send new share
-                print("Sending new share to node %s..." % node_id)
-                misc.send_file("new_share.txt", connstream)
-
-                misc.write_file("sm_data.txt",
-                                str(share + shares_lst[node_no - 1] + recv_share) + "\n" + str(n) + "\n" + str(
-                                    publish_lst) + "\n" + str(g) + "\n" + str(
-                                    l) + "\n" + str(k))
-                print("Shares updated!")
-                UPDATE_TIMESTAMP[1] = "recv_timestamp.txt"
-                call(UPDATE_TIMESTAMP)
-
-
+            if recv_expected_timestamp == expected_timestamp and recv_expected_timestamp in send_refresh_data:
+                print("Requested Timestamp:OK")
+                str2 = str(recv_expected_timestamp)
+                if node_id in send_refresh_data[recv_expected_timestamp]:
+                    print("Requested Share:OK")
+                    str1 = str(send_refresh_data[recv_expected_timestamp][node_id])
+                else:
+                    print("Requested Share:FAIL")
             else:
-                print("Timestamp too recent. Deny to refresh shares!")
-                connstream.send("0".encode('ascii'))
+                print("Requested Timestamp:FAIL")
+
+            print("Sending refresh data to node %s..." % node_id)
+            misc.write_file("new_share.txt", str1 + "\n" + str2)
+            misc.send_file("new_share.txt", connstream)
 
             # finished with CC
             print("Done! Closing connection with CC node %s." % node_id)
@@ -249,4 +253,4 @@ def listen():
 
 listen_thread = threading.Thread(target=listen)
 listen_thread.start()
-# start_refresh_protocol()
+start_refresh_protocol()
