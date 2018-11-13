@@ -27,6 +27,7 @@ timestamp = 0
 expected_timestamp = 0
 send_refresh_data = {}
 recvd_refresh_data = {}
+count = 0
 
 CC = "CC_" + str(local_node_id)
 dir_ = ROOT_DIR + CC
@@ -59,13 +60,14 @@ def set_vars():
 
 
 def start_refresh_protocol():
-    threading.Timer(30.0, start_refresh_protocol).start()
+    threading.Timer(10.0, start_refresh_protocol).start()
     mutex.acquire()
-    global timestamp, expected_timestamp, share
+    global timestamp, expected_timestamp, share, count
 
     if os.path.isfile("sm_data.txt"):
         set_vars()
         expected_timestamp = timestamp + 60
+        print(timestamp, expected_timestamp)
         print("\n*** Starting share refresh protocol ***")
         print("Timestamp:", timestamp)
         print("Expected Timestamp:", expected_timestamp)
@@ -140,23 +142,34 @@ def start_refresh_protocol():
         print("\nAfter Send Refresh Data:", send_refresh_data)
         print("\nAfter Recvd Refresh Data:", recvd_refresh_data)
         print("\nNew shares:%s Required:%s" % (len(recvd_refresh_data[expected_timestamp]), k))
+        count += 1
+        print("\nCount:", count)
 
-        if len(recvd_refresh_data[expected_timestamp]) >= k:
-            sum = share
-            for node, new_share in recvd_refresh_data[expected_timestamp].items():
-                sum += new_share
+        if count == 3:
+            refresh_share()
+            count = 0
 
-            # update everything
-            misc.write_file("sm_data.txt",
-                            str(sum) + "\n" + str(
-                                n) + "\n" + str(
-                                publish_lst) + "\n" + str(g) + "\n" + str(
-                                l) + "\n" + str(k) + "\n" + str(timestamp))
-            print("Shares refreshed!")
-        else:
-            print("Share refresh failed!")
 
     mutex.release()
+
+
+def refresh_share():
+    if len(recvd_refresh_data[expected_timestamp]) >= k:
+        sum = share
+        for node, new_share in recvd_refresh_data[expected_timestamp].items():
+            sum += new_share
+
+        # update everything
+        misc.write_file("sm_data.txt",
+                        str(sum) + "\n" + str(
+                            n) + "\n" + str(
+                            publish_lst) + "\n" + str(g) + "\n" + str(
+                            l) + "\n" + str(k) + "\n" + str(expected_timestamp))
+        print("Shares refreshed!")
+        recvd_refresh_data.pop(expected_timestamp)
+        send_refresh_data.pop(expected_timestamp)
+    else:
+        print("Share refresh failed!")
 
 
 def listen():
@@ -253,4 +266,4 @@ def listen():
 
 listen_thread = threading.Thread(target=listen)
 listen_thread.start()
-# start_refresh_protocol()
+start_refresh_protocol()
