@@ -198,6 +198,7 @@ def listen():
             connstream.close()
 
         elif flag == "1":
+            set_vars()
             print("\nClient has connected!")
             # recv digest to be signed
             misc.recv_file("client_digest.txt", connstream)
@@ -206,14 +207,10 @@ def listen():
                 content = f.readlines()
             digest = (int(content[0]))
 
-            with open('sm_data.txt') as f:
-                content = f.readlines()
-            share = (int(content[0]))
-            n = (int(content[1]))
             x = misc.square_and_multiply(digest, 2 * delta * share, n)
 
             with open("client_sig_data.txt", 'w+') as the_file:
-                the_file.write(str(x) + "\n" + str(n))
+                the_file.write(str(x) + "\n" + str(n) + "\n" + str(timestamp))
             print("Sending signature data to client...")
             misc.send_file("client_sig_data.txt", connstream)
 
@@ -223,7 +220,6 @@ def listen():
 
         # new share fetch request
         elif flag == "2":
-            global timestamp
             node_id = int(connstream.recv(1).decode('ascii'))
             print("\nCC node %s has connected to fetch new shares!" % node_id)
 
