@@ -61,11 +61,11 @@ def set_vars():
 def start_refresh_protocol():
     threading.Timer(30.0, start_refresh_protocol).start()
     mutex.acquire()
-    set_vars()
     global timestamp, expected_timestamp, share
-    expected_timestamp = timestamp + 60
 
     if os.path.isfile("sm_data.txt"):
+        set_vars()
+        expected_timestamp = timestamp + 60
         print("\n*** Starting share refresh protocol ***")
         print("Timestamp:", timestamp)
         print("Expected Timestamp:", expected_timestamp)
@@ -253,4 +253,4 @@ def listen():
 
 listen_thread = threading.Thread(target=listen)
 listen_thread.start()
-start_refresh_protocol()
+# start_refresh_protocol()
