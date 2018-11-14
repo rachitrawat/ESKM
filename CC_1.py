@@ -19,9 +19,9 @@ CC_Map = {1: ["127.0.0.1", 4001],
           2: ["127.0.0.1", 4002],
           3: ["127.0.0.1", 4003]}
 
-# variables
+# global variables
 
-local_node_id = 1
+SELF_ID = 1
 share = 0
 n = 0
 publish_lst = []
@@ -34,7 +34,7 @@ send_refresh_data = {}
 recvd_refresh_data = {}
 count = 0
 
-CC = "CC_" + str(local_node_id)
+CC = "CC_" + str(SELF_ID)
 dir_ = ROOT_DIR + CC
 
 if not os.path.exists(dir_):
@@ -45,7 +45,7 @@ os.chdir(dir_)
 mutex = threading.Lock()
 
 bindsocket = socket.socket()
-bindsocket.bind((CC_Map[local_node_id][0], CC_Map[local_node_id][1]))
+bindsocket.bind((CC_Map[SELF_ID][0], CC_Map[SELF_ID][1]))
 bindsocket.listen(5)
 delta = math.factorial(3)
 print(CC + " is running!")
@@ -86,17 +86,17 @@ def start_refresh_protocol():
             print("Creating a random zero polynomial...")
             coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
 
-            # need to send theses shares
+            # new shares to send
             for idx, val in enumerate(shares_lst):
                 send_refresh_data[expected_timestamp][idx + 1] = val
 
-            # local node share
-            recvd_refresh_data[expected_timestamp][local_node_id] = shares_lst[local_node_id - 1]
+            # self share
+            recvd_refresh_data[expected_timestamp][SELF_ID] = shares_lst[SELF_ID - 1]
 
-        # start refresh protocol from other CC nodes
+        # fetch new shares from other CC nodes
         for i, addr in CC_Map.items():
-            # do not fetch share again if share was already fetched before for a given timestamp
-            if i != local_node_id and i not in recvd_refresh_data[expected_timestamp]:
+            # do not fetch share again if share was already fetched earlier for a given timestamp
+            if i != SELF_ID and i not in recvd_refresh_data[expected_timestamp]:
                 cc_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
                 # require a certificate from the CC Node
@@ -116,8 +116,8 @@ def start_refresh_protocol():
 
                 # send flag
                 ssl_sock.send("2".encode('ascii'))
-                # send node no
-                ssl_sock.send(str(local_node_id).encode('ascii'))
+                # send self id
+                ssl_sock.send(str(SELF_ID).encode('ascii'))
                 # send expected timestamp
                 misc.write_file("expected_timestamp.txt", str(timestamp + 60))
                 misc.send_file("expected_timestamp.txt", ssl_sock)
@@ -165,7 +165,7 @@ def refresh_share():
                             publish_lst) + "\n" + str(g) + "\n" + str(
                             l) + "\n" + str(k) + "\n" + str(expected_timestamp))
         print("Shares refreshed!")
-        # remove older timestamps
+        print("Removing old shares...")
         recvd_refresh_data.pop(expected_timestamp)
         send_refresh_data.pop(expected_timestamp)
     else:
@@ -187,32 +187,33 @@ def listen():
         # check if SM or client or CC is connecting
         flag = str(connstream.recv(1).decode('ascii'))
 
+        # SM has connected to send key-share
         if flag == "0":
             print("\nSM has connected!")
-            # receive key-share
-            print("Receiving data...")
+            print("Receiving key-share...")
             misc.recv_file("sm_data.txt", connstream)
             set_vars()
 
-            # share verification
-            if not sv.verify_share(local_node_id, misc.square_and_multiply(g, int(share), n), publish_lst, n):
-                print("Share verification: FAILED")
+            # feldman share verification
+            if not sv.verify_share(SELF_ID, misc.square_and_multiply(g, int(share), n), publish_lst, n):
+                print("Share verification:FAILED")
             else:
-                print("Share verification: OK")
+                print("Share verification:OK")
 
             # finished with SM
             print("Done! Closing connection with SM.")
             connstream.close()
 
+        # client has connected to collect signature fragment
         elif flag == "1":
             set_vars()
             print("\nClient has connected!")
-            # recv digest to be signed
+            # digest to be signed
             misc.recv_file("client_digest.txt", connstream)
 
             with open('client_digest.txt') as f:
                 content = f.readlines()
-            digest = (int(content[0]))
+            digest = int(content[0])
 
             x = misc.square_and_multiply(digest, 2 * delta * share, n)
 
@@ -225,7 +226,7 @@ def listen():
             print("Done! Closing connection with client.")
             connstream.close()
 
-        # new share fetch request
+        # CC has connected to fetch new shares
         elif flag == "2":
             node_id = int(connstream.recv(1).decode('ascii'))
             print("\nCC node %s has connected to fetch new shares!" % node_id)
