@@ -52,8 +52,7 @@ print(CC + " is running!")
 
 def set_vars():
     global share, n, feldman_info, g, l, k, timestamp
-    with open('sm_data.txt') as f:
-        content = f.readlines()
+    content = misc.read_file("sm_data.txt")
     share = int(content[0])
     n = int(content[1])
     feldman_info = ast.literal_eval(content[2])
@@ -209,14 +208,12 @@ def listen():
             # digest to be signed
             misc.recv_file("client_digest.txt", connstream)
 
-            with open('client_digest.txt') as f:
-                content = f.readlines()
+            content = misc.read_file("client_digest.txt")
             digest = int(content[0])
 
             x = misc.square_and_multiply(digest, 2 * delta * share, n)
 
-            with open("client_sig_data.txt", 'w+') as the_file:
-                the_file.write(str(x) + "\n" + str(n) + "\n" + str(timestamp))
+            misc.write_file("client_sig_data.txt", str(x) + "\n" + str(n) + "\n" + str(timestamp))
             print("Sending signature data to client...")
             misc.send_file("client_sig_data.txt", connstream)
 

@@ -95,7 +95,7 @@ while True:
     g = misc.square_and_multiply(g, 2, n)
 
     # split and share d
-    # 2 out of 3 secret sharing over m
+    # k out of l secret sharing over m
     coefficient_lst, shares_lst = ss.split_secret(l, k, m, d)
 
     # info for share verification

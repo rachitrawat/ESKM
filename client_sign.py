@@ -26,14 +26,12 @@ else:
 
 # read Encoded Message (EM) from file
 # EM will be signed
-with open("eskm_em.txt") as f:
-    content = f.readlines()
+content = misc.read_file("eskm_em.txt")
 
 em = ''.join(content)
 digest = int(em, 16)
 
-with open('eskm_digest.txt', 'w+') as the_file:
-    the_file.write(str(digest))
+misc.write_file("eskm_digest.txt", str(digest))
 
 x = [0] * 4
 timestamp_dict = {}
@@ -75,11 +73,10 @@ while count != 3:
         print("Receiving sig data from CC_%s..." % i)
         misc.recv_file("eskm_cc_sig_data.txt", ssl_sock)
 
-        with open("eskm_cc_sig_data.txt") as f:
-            content = f.readlines()
-        x[i] = (int(content[0]))
-        n = (int(content[1]))
-        timestamp = int(float(content[2]))
+        content = misc.read_file("eskm_cc_sig_data.txt")
+        x[i] = int(content[0])
+        n = int(content[1])
+        timestamp = int(content[2])
         print("Sig data received!")
 
         if timestamp not in timestamp_dict:
@@ -109,12 +106,10 @@ while count != 3:
 
 if len(timestamp_dict) == 0:
     print("\nLess than %s nodes online. Signature generation failed!" % k)
-    with open('eskm_sig.txt', 'w+') as the_file:
-        the_file.write("-1")
+    misc.write_file("eskm_sig.txt", "-1")
 elif timestamp_to_use not in timestamp_dict or len(timestamp_dict[timestamp_to_use]) < k:
     print("\nTimestamps out of sync. Signature generation failed!")
-    with open('eskm_sig.txt', 'w+') as the_file:
-        the_file.write("-1")
+    misc.write_file("eskm_sig.txt", "-1")
 else:
     w = 1
     chosen_nodes = timestamp_dict[timestamp_to_use]
@@ -146,5 +141,4 @@ else:
         j += 1
 
     # write signature to file
-    with open('eskm_sig.txt', 'w+') as the_file:
-        the_file.write(' '.join(lst2))
+    misc.write_file("eskm_sig.txt", ' '.join(lst2))
