@@ -3,8 +3,9 @@ import re
 import shutil
 import socket
 import ssl
-from subprocess import call, check_output
 import time
+from subprocess import call, check_output
+
 from core.modules import secret_sharing as ss, misc
 
 debug = False
@@ -26,11 +27,15 @@ CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
 ROOT_DIR = "/tmp"
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 
+# Node ID: IP Addr, Port
+CC_Map = {1: ["127.0.0.1", 4001],
+          2: ["127.0.0.1", 4002],
+          3: ["127.0.0.1", 4003]}
+
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 10030))
+bindsocket.bind(("127.0.0.1", 10030))
 bindsocket.listen(5)
 print("Security Manager is running!")
-
 # Total no of nodes
 l = 3
 # Threshold no of nodes
@@ -103,7 +108,7 @@ while True:
 
         timestamp = time.time()
 
-        for i in range(1, 4):
+        for i, addr in CC_Map.items():
             # distribute shares and verification info
             server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -113,7 +118,7 @@ while True:
                                        cert_reqs=ssl.CERT_REQUIRED)
 
             print("\nUploading share to CC node %s ..." % i)
-            ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
+            ssl_sock.connect((addr[0], addr[1]))
             ssl_sock.send("0".encode('ascii'))
             with open("sm_data.txt", "w+") as text_file:
                 text_file.write(

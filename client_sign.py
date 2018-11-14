@@ -11,6 +11,12 @@ from core.modules import lagrange_interpolation as lp, misc
 
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 ROOT_DIR = "/tmp"
+
+# Node ID: IP Addr, Port
+CC_Map = {1: ["127.0.0.1", 4001],
+          2: ["127.0.0.1", 4002],
+          3: ["127.0.0.1", 4003]}
+
 os.chdir(ROOT_DIR)
 
 if sys.argv[1:] == ["debug"]:
@@ -39,7 +45,7 @@ count = 0
 timestamp_to_use = 0
 while count != 3:
     flag = False
-    for i in range(1, 4):
+    for i, addr in CC_Map.items():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # require a certificate from the CC node
@@ -50,7 +56,7 @@ while count != 3:
         print("\nConnecting to CC_%s..." % i)
 
         try:
-            ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
+            ssl_sock.connect((CC_Map[i][0], CC_Map[i][1]))
         except socket_error as serr:
             if serr.errno != errno.ECONNREFUSED:
                 raise serr
@@ -97,11 +103,16 @@ while count != 3:
     if flag:
         break
     else:
+        print("\nRetrying in 5s...")
         count += 1
-        time.sleep(2)
+        time.sleep(5)
 
-if len(timestamp_dict) == 0 or len(timestamp_dict[timestamp_to_use]) < k:
+if len(timestamp_dict) == 0:
     print("\nLess than %s nodes online. Signature generation failed!" % k)
+    with open('eskm_sig.txt', 'w+') as the_file:
+        the_file.write("-1")
+elif timestamp_to_use not in timestamp_dict or len(timestamp_dict[timestamp_to_use]) < k:
+    print("\nTimestamps out of sync. Signature generation failed!")
     with open('eskm_sig.txt', 'w+') as the_file:
         the_file.write("-1")
 else:

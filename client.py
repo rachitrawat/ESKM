@@ -14,7 +14,7 @@ ssl_sock = ssl.wrap_socket(s,
                            ca_certs=CERT_DIR + "/CA.cert",
                            cert_reqs=ssl.CERT_REQUIRED)
 
-ssl_sock.connect((socket.gethostname(), 10030))
+ssl_sock.connect(("127.0.0.1", 10030))
 
 supported_key_size = ["1024", "2048", "4096"]
 print("Supported key-size: 1024, 2048 (default), 4096")

@@ -14,6 +14,11 @@ UPDATE_TIMESTAMP = "cp new_timestamp.txt timestamp.txt".split()
 ROOT_DIR = "/tmp/"
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates/"
 
+# Node ID: IP Addr, Port
+CC_Map = {1: ["127.0.0.1", 4001],
+          2: ["127.0.0.1", 4002],
+          3: ["127.0.0.1", 4003]}
+
 # variables
 
 local_node_id = 1
@@ -40,7 +45,7 @@ os.chdir(dir_)
 mutex = threading.Lock()
 
 bindsocket = socket.socket()
-bindsocket.bind((socket.gethostname(), 4000 + local_node_id))
+bindsocket.bind((CC_Map[local_node_id][0], CC_Map[local_node_id][1]))
 bindsocket.listen(5)
 delta = math.factorial(3)
 print(CC + " is running!")
@@ -89,7 +94,7 @@ def start_refresh_protocol():
             recvd_refresh_data[expected_timestamp][local_node_id] = shares_lst[local_node_id - 1]
 
         # start refresh protocol from other CC nodes
-        for i in range(1, l + 1):
+        for i, addr in CC_Map.items():
             if i != local_node_id:
                 cc_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -100,7 +105,7 @@ def start_refresh_protocol():
 
                 print("\nConnecting to CC node %s..." % i)
                 try:
-                    ssl_sock.connect((socket.gethostname(), 4001 + i - 1))
+                    ssl_sock.connect((CC_Map[i][0], CC_Map[i][1]))
                 except socket_error as serr:
                     if serr.errno != errno.ECONNREFUSED:
                         raise serr
