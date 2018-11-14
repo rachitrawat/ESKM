@@ -20,11 +20,10 @@ CC_Map = {1: ["127.0.0.1", 4001],
           3: ["127.0.0.1", 4003]}
 
 # global variables
-
 SELF_ID = 1
 share = 0
 n = 0
-publish_lst = []
+feldman_info = []
 g = 0
 l = 0
 k = 0
@@ -52,16 +51,16 @@ print(CC + " is running!")
 
 
 def set_vars():
-    global share, n, publish_lst, g, l, k, timestamp
+    global share, n, feldman_info, g, l, k, timestamp
     with open('sm_data.txt') as f:
         content = f.readlines()
     share = int(content[0])
     n = int(content[1])
-    publish_lst = ast.literal_eval(content[2])
+    feldman_info = ast.literal_eval(content[2])
     g = int(content[3])
     l = int(content[4])
     k = int(content[5])
-    timestamp = float(content[6])
+    timestamp = int(content[6])
 
 
 def start_refresh_protocol():
@@ -126,7 +125,7 @@ def start_refresh_protocol():
                 misc.recv_file("recv_share.txt", ssl_sock)
                 content = misc.read_file("recv_share.txt")
                 recv_share = int(content[0])
-                recv_timestamp = float(content[1])
+                recv_timestamp = int(content[1])
 
                 if recv_timestamp != "-1" and recv_timestamp == expected_timestamp:
                     print("Timestamp:OK")
@@ -162,7 +161,7 @@ def refresh_share():
         misc.write_file("sm_data.txt",
                         str(sum) + "\n" + str(
                             n) + "\n" + str(
-                            publish_lst) + "\n" + str(g) + "\n" + str(
+                            feldman_info) + "\n" + str(g) + "\n" + str(
                             l) + "\n" + str(k) + "\n" + str(expected_timestamp))
         print("Shares refreshed!")
         print("Removing old shares...")
@@ -176,7 +175,7 @@ def listen():
     while True:
         newsocket, fromaddr = bindsocket.accept()
         mutex.acquire()
-        global share, g, n, publish_lst, timestamp, expected_timestamp
+        global share, g, n, feldman_info, timestamp, expected_timestamp
         print("\nGot a connection from %s" % str(fromaddr))
         connstream = ssl.wrap_socket(newsocket,
                                      server_side=True,
@@ -195,7 +194,7 @@ def listen():
             set_vars()
 
             # feldman share verification
-            if not sv.verify_share(SELF_ID, misc.square_and_multiply(g, int(share), n), publish_lst, n):
+            if not sv.verify_share(SELF_ID, misc.square_and_multiply(g, int(share), n), feldman_info, n):
                 print("Share verification:FAILED")
             else:
                 print("Share verification:OK")
@@ -234,7 +233,7 @@ def listen():
             # recv expected timestamp
             misc.recv_file("recv_expected_timestamp.txt", connstream)
             content = misc.read_file("recv_expected_timestamp.txt")
-            recv_expected_timestamp = float(content[0])
+            recv_expected_timestamp = int(content[0])
 
             str1 = "-1"
             str2 = "-1"

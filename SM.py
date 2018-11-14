@@ -27,6 +27,11 @@ CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
 ROOT_DIR = "/tmp"
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 
+# Total no of nodes
+l = 3
+# Threshold no of nodes
+k = 2
+
 # Node ID: IP Addr, Port
 CC_Map = {1: ["127.0.0.1", 4001],
           2: ["127.0.0.1", 4002],
@@ -36,10 +41,6 @@ bindsocket = socket.socket()
 bindsocket.bind(("127.0.0.1", 10030))
 bindsocket.listen(5)
 print("Security Manager is running!")
-# Total no of nodes
-l = 3
-# Threshold no of nodes
-k = 2
 
 while True:
     newsocket, fromaddr = bindsocket.accept()
@@ -100,13 +101,13 @@ while True:
         coefficient_lst, shares_lst = ss.split_secret(l, k, m, d)
 
         # info for share verification
-        publish_lst = []
+        feldman_info = []
         for element in coefficient_lst:
-            publish_lst.append(misc.square_and_multiply(g, element, n))
+            feldman_info.append(misc.square_and_multiply(g, element, n))
         if debug:
-            print("\nPublished info for verification: ", publish_lst)
+            print("\nPublished info for verification: ", feldman_info)
 
-        timestamp = time.time()
+        timestamp = int(time.time())
 
         for i, addr in CC_Map.items():
             # distribute shares and verification info
@@ -122,7 +123,7 @@ while True:
             ssl_sock.send("0".encode('ascii'))
             with open("sm_data.txt", "w+") as text_file:
                 text_file.write(
-                    str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(publish_lst) + "\n" + str(g) + "\n" + str(
+                    str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(feldman_info) + "\n" + str(g) + "\n" + str(
                         l) + "\n" + str(k) + "\n" + str(timestamp))
             misc.send_file("sm_data.txt", ssl_sock)
             print("Done! Closing connection with CC node %s." % i)
