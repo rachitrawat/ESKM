@@ -55,7 +55,7 @@ while True:
 
     if not os.path.exists(dir_):
         os.makedirs(dir_)
-        os.chdir(dir_)
+    os.chdir(dir_)
 
     key_size = str(connstream.recv(4).decode('ascii'))
     print("\nRequested RSA key size: ", key_size)
