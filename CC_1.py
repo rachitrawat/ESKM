@@ -95,7 +95,8 @@ def start_refresh_protocol():
 
         # start refresh protocol from other CC nodes
         for i, addr in CC_Map.items():
-            if i != local_node_id:
+            # do not fetch share again if share was already fetched before for a given timestamp
+            if i != local_node_id and i not in recvd_refresh_data[expected_timestamp]:
                 cc_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
                 # require a certificate from the CC Node
@@ -164,6 +165,7 @@ def refresh_share():
                             publish_lst) + "\n" + str(g) + "\n" + str(
                             l) + "\n" + str(k) + "\n" + str(expected_timestamp))
         print("Shares refreshed!")
+        # remove older timestamps
         recvd_refresh_data.pop(expected_timestamp)
         send_refresh_data.pop(expected_timestamp)
     else:
