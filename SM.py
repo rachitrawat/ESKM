@@ -44,7 +44,7 @@ print("Security Manager is running!")
 
 while True:
     newsocket, fromaddr = bindsocket.accept()
-    print("\nGot a connection from %s" % str(fromaddr))
+    print("\nGot a connection from client %s" % str(fromaddr))
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
                                  certfile=CERT_DIR + "/SM.cert",
@@ -56,80 +56,76 @@ while True:
     if not os.path.exists(dir_):
         os.makedirs(dir_)
         os.chdir(dir_)
-        print("New client has connected!")
-        size = str(connstream.recv(4).decode('ascii'))
-        print("\nRequested RSA key size: ", size)
-        if size not in supported_key_size:
-            size = "2048"
-        GEN_RSA_PRIVATE[4] = size
-        GEN_RSA_DUMMY[4] = size
-        # generate private key
-        call(GEN_RSA_PRIVATE)
-        # generate public key
-        call(GEN_RSA_PUBLIC)
-        # convert pubkey to ssh format
-        pub = (check_output(CONVERT_SSH_PUB)).decode('ascii')
 
-        with open("id_rsa.pub", "w+") as text_file:
-            text_file.write(pub)
+    key_size = str(connstream.recv(4).decode('ascii'))
+    print("\nRequested RSA key size: ", key_size)
+    if key_size not in supported_key_size:
+        key_size = "2048"
+    GEN_RSA_PRIVATE[4] = key_size
+    GEN_RSA_DUMMY[4] = key_size
 
-        # extract information from private key
-        data = (check_output(GET_KEY_INFO)).decode('ascii')
+    # generate private key
+    call(GEN_RSA_PRIVATE)
+    # generate public key
+    call(GEN_RSA_PUBLIC)
+    # convert pubkey to ssh format
+    pub = (check_output(CONVERT_SSH_PUB)).decode('ascii')
+    misc.write_file("id_rsa.pub", pub)
 
-        # key data
-        e = 65537
-        n = int((check_output(GET_RSA_MODULUS)).decode('ascii').split('=')[1], 16)
-        # use regex to extract hex and convert to decimal
-        # d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
-        p = int(re.sub('[^\w]', '', re.findall('prime1(?s)(.*)prime2', data)[0]), 16)
-        q = int(re.sub('[^\w]', '', re.findall('prime2(?s)(.*)exponent1', data)[0]), 16)
-        # exp1 = int(re.sub('[^\w]', '', re.findall('exponent1(?s)(.*)exponent2', data)[0]), 16)
-        # exp2 = int(re.sub('[^\w]', '', re.findall('exponent2(?s)(.*)coefficient', data)[0]), 16)
-        # coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
-        totient = (p - 1) * (q - 1)
-        p_ = (p - 1) // 2
-        q_ = (q - 1) // 2
-        m = p_ * q_
-        d = misc.multiplicative_inverse(e, m)
-        g_p = misc.find_primitive_root(p)
-        g_q = misc.find_primitive_root(q)
-        g = misc.crt([g_p, g_q], [p, q])
-        g = misc.square_and_multiply(g, 2, n)
+    # extract information from private key
+    data = (check_output(GET_KEY_INFO)).decode('ascii')
 
-        # split and share d
-        # 2 out of 3 secret sharing over m
-        coefficient_lst, shares_lst = ss.split_secret(l, k, m, d)
+    # use regex to extract hex and convert to decimal
+    e = 65537
+    n = int((check_output(GET_RSA_MODULUS)).decode('ascii').split('=')[1], 16)
+    p = int(re.sub('[^\w]', '', re.findall('prime1(?s)(.*)prime2', data)[0]), 16)
+    q = int(re.sub('[^\w]', '', re.findall('prime2(?s)(.*)exponent1', data)[0]), 16)
+    # d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
+    # exp1 = int(re.sub('[^\w]', '', re.findall('exponent1(?s)(.*)exponent2', data)[0]), 16)
+    # exp2 = int(re.sub('[^\w]', '', re.findall('exponent2(?s)(.*)coefficient', data)[0]), 16)
+    # coeff = int(re.sub('[^\w]', '', re.findall('coefficient(?s)(.*)', data)[0]), 16)
+    totient = (p - 1) * (q - 1)
+    p_ = (p - 1) // 2
+    q_ = (q - 1) // 2
+    m = p_ * q_
+    d = misc.multiplicative_inverse(e, m)
+    g_p = misc.find_primitive_root(p)
+    g_q = misc.find_primitive_root(q)
+    g = misc.crt([g_p, g_q], [p, q])
+    g = misc.square_and_multiply(g, 2, n)
 
-        # info for share verification
-        feldman_info = []
-        for element in coefficient_lst:
-            feldman_info.append(misc.square_and_multiply(g, element, n))
-        if debug:
-            print("\nPublished info for verification: ", feldman_info)
+    # split and share d
+    # 2 out of 3 secret sharing over m
+    coefficient_lst, shares_lst = ss.split_secret(l, k, m, d)
 
-        timestamp = int(time.time())
+    # info for share verification
+    feldman_info = []
+    for element in coefficient_lst:
+        feldman_info.append(misc.square_and_multiply(g, element, n))
+    if debug:
+        print("\nPublished info for verification: ", feldman_info)
 
-        for i, addr in CC_Map.items():
-            # distribute shares and verification info
-            server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    timestamp = int(time.time())
 
-            # require a certificate from the cc Node
-            ssl_sock = ssl.wrap_socket(server_as_client,
-                                       ca_certs=CERT_DIR + "/CA.cert",
-                                       cert_reqs=ssl.CERT_REQUIRED)
+    for i, addr in CC_Map.items():
+        # distribute shares and verification info
+        server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-            print("\nUploading share to CC node %s ..." % i)
-            ssl_sock.connect((addr[0], addr[1]))
-            ssl_sock.send("0".encode('ascii'))
-            with open("sm_data.txt", "w+") as text_file:
-                text_file.write(
-                    str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(feldman_info) + "\n" + str(g) + "\n" + str(
-                        l) + "\n" + str(k) + "\n" + str(timestamp))
-            misc.send_file("sm_data.txt", ssl_sock)
-            print("Done! Closing connection with CC node %s." % i)
-            ssl_sock.close()
+        # require a certificate from the cc Node
+        ssl_sock = ssl.wrap_socket(server_as_client,
+                                   ca_certs=CERT_DIR + "/CA.cert",
+                                   cert_reqs=ssl.CERT_REQUIRED)
 
-    os.chdir(dir_)
+        print("\nUploading share to CC node %s ..." % i)
+        ssl_sock.connect((addr[0], addr[1]))
+        ssl_sock.send("0".encode('ascii'))
+        sm_data_str = str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(feldman_info) + "\n" + str(g) + "\n" + str(
+            l) + "\n" + str(k) + "\n" + str(timestamp)
+        misc.write_file("sm_data.txt", sm_data_str)
+        misc.send_file("sm_data.txt", ssl_sock)
+        print("Done! Closing connection with CC node %s." % i)
+        ssl_sock.close()
+
     # send public key to client
     print("\nSending public key to client...")
     misc.send_file("id_rsa.pub", connstream)
