@@ -18,7 +18,6 @@ OPENSSL = "/usr/bin/openssl "
 supported_key_size = ["1024", "2048", "4096"]
 
 GEN_RSA_PRIVATE = (LOCAL_OPENSSL + "genrsa -out private.pem 2048").split()
-GEN_RSA_DUMMY = (OPENSSL + "genrsa -out dummy.pem 2048").split()
 GEN_RSA_PUBLIC = (LOCAL_OPENSSL + "rsa -in private.pem -outform PEM -pubout -out public.pem").split()
 GET_RSA_MODULUS = (LOCAL_OPENSSL + "rsa -noout -modulus -in private.pem").split()
 GET_KEY_INFO = (LOCAL_OPENSSL + "rsa -in private.pem -text -inform PEM -noout").split()
@@ -62,7 +61,6 @@ while True:
     if key_size not in supported_key_size:
         key_size = "2048"
     GEN_RSA_PRIVATE[4] = key_size
-    GEN_RSA_DUMMY[4] = key_size
 
     # generate private key
     call(GEN_RSA_PRIVATE)
@@ -130,11 +128,9 @@ while True:
     print("\nSending public key to client...")
     misc.send_file("id_rsa.pub", connstream)
     print("Public key sent to client!")
-    # generate dummy private key
-    call(GEN_RSA_DUMMY)
     # send dummy private key to client
     print("Sending dummy private key to client...")
-    misc.send_file("dummy.pem", connstream)
+    misc.send_file("/tmp/dummy.pem", connstream)
     print("Dummy private key sent to client!")
 
     # finished with client
