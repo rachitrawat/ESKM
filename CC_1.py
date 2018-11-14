@@ -118,8 +118,7 @@ def start_refresh_protocol():
                 # send self id
                 ssl_sock.send(str(SELF_ID).encode('ascii'))
                 # send expected timestamp
-                misc.write_file("expected_timestamp.txt", str(timestamp + 60))
-                misc.send_file("expected_timestamp.txt", ssl_sock)
+                misc.send_string(str(expected_timestamp), ssl_sock)
 
                 # recv new share
                 misc.recv_file("recv_share.txt", ssl_sock)
@@ -231,9 +230,7 @@ def listen():
             print("\nCC node %s has connected to fetch new shares!" % node_id)
 
             # recv expected timestamp
-            misc.recv_file("recv_expected_timestamp.txt", connstream)
-            content = misc.read_file("recv_expected_timestamp.txt")
-            recv_expected_timestamp = int(content[0])
+            recv_expected_timestamp = int(misc.recv_string(connstream))
 
             str1 = "-1"
             str2 = "-1"

@@ -68,17 +68,17 @@ while True:
         # generate public key
         call(GEN_RSA_PUBLIC)
         # convert pubkey to ssh format
-        pub = (check_output(CONVERT_SSH_PUB)).decode('utf-8')
+        pub = (check_output(CONVERT_SSH_PUB)).decode('ascii')
 
         with open("id_rsa.pub", "w+") as text_file:
             text_file.write(pub)
 
         # extract information from private key
-        data = (check_output(GET_KEY_INFO)).decode('utf-8')
+        data = (check_output(GET_KEY_INFO)).decode('ascii')
 
         # key data
         e = 65537
-        n = int((check_output(GET_RSA_MODULUS)).decode('utf-8').split('=')[1], 16)
+        n = int((check_output(GET_RSA_MODULUS)).decode('ascii').split('=')[1], 16)
         # use regex to extract hex and convert to decimal
         # d = int(re.sub('[^\w]', '', re.findall('privateExponent(?s)(.*)prime1', data)[0]), 16)
         p = int(re.sub('[^\w]', '', re.findall('prime1(?s)(.*)prime2', data)[0]), 16)

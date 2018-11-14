@@ -226,3 +226,27 @@ def read_file(file_name):
     with open(file_name) as f:
         content = f.readlines()
     return content
+
+
+def ascii_len(s):
+    return len(s.encode('ascii'))
+
+
+def send_string(string, socket_obj):
+    size = ascii_len(string)
+
+    # encode string size as 32 bit binary
+    fsize_b = bin(size)[2:].zfill(32)
+    socket_obj.send(fsize_b.encode('ascii'))
+
+    # send string
+    socket_obj.send(string.encode('ascii'))
+
+
+def recv_string(socket_obj):
+    # recv string size
+    fsize_b = socket_obj.recv(32).decode('ascii')
+    fsize = int(fsize_b, 2)
+
+    # recv string
+    return socket_obj.recv(fsize).decode('ascii')
