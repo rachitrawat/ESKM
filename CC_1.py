@@ -43,7 +43,6 @@ if not os.path.exists(dir_):
 os.chdir(dir_)
 
 mutex = threading.Lock()
-mutex2 = threading.Lock()
 
 bindsocket = socket.socket()
 bindsocket.bind((CC_Map[SELF_ID][0], CC_Map[SELF_ID][1]))
