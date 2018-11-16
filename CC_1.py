@@ -5,6 +5,7 @@ import os
 import socket
 import ssl
 import threading
+import time
 from socket import error as socket_error
 
 from core.modules import misc, share_verification as sv, share_refresh as sr
@@ -42,6 +43,7 @@ if not os.path.exists(dir_):
 os.chdir(dir_)
 
 mutex = threading.Lock()
+mutex2 = threading.Lock()
 
 bindsocket = socket.socket()
 bindsocket.bind((CC_Map[SELF_ID][0], CC_Map[SELF_ID][1]))
@@ -140,16 +142,17 @@ def start_refresh_protocol():
 
         print("\nShares:%s Required:%s" % (len(recvd_refresh_data[expected_timestamp]), k))
         count += 1
-        print("Iteration:%s/3" % count)
+        print("Iteration:%s" % count)
 
         if count == 3:
-            refresh_share()
-            count = 0
-
+            refresh_time = abs(expected_timestamp - int(time.time()))
+            print("Refreshing shares in %s seconds..." % refresh_time)
+            threading.Timer(refresh_time, refresh_share).start()
     mutex.release()
 
 
 def refresh_share():
+    global count
     if len(recvd_refresh_data[expected_timestamp]) >= k:
         sum = share
         for node, new_share in recvd_refresh_data[expected_timestamp].items():
@@ -167,6 +170,7 @@ def refresh_share():
         send_refresh_data.pop(expected_timestamp)
     else:
         print("Share refresh failed!")
+    count = 0
 
 
 def listen():
