@@ -105,7 +105,7 @@ def start_refresh_protocol():
 
                 print("\nConnecting to CC node %s..." % i)
                 try:
-                    ssl_sock.connect((CC_Map[i][0], CC_Map[i][1]))
+                    ssl_sock.connect((addr[0], addr[1]))
                 except socket_error as serr:
                     if serr.errno != errno.ECONNREFUSED:
                         raise serr

@@ -1,9 +1,11 @@
+import errno
 import os
 import re
 import shutil
 import socket
 import ssl
 import time
+from ssl import socket_error
 from subprocess import call, check_output
 
 from core.modules import secret_sharing as ss, misc
@@ -104,7 +106,7 @@ while True:
         print("\nPublished info for verification: ", feldman_info)
 
     timestamp = int(time.time())
-
+    count = 0
     for i, addr in CC_Map.items():
         # distribute shares and verification info
         server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -113,9 +115,17 @@ while True:
         ssl_sock = ssl.wrap_socket(server_as_client,
                                    ca_certs=CERT_DIR + "/CA.cert",
                                    cert_reqs=ssl.CERT_REQUIRED)
-
+        print("\nConnecting to CC node %s..." % i)
+        try:
+            ssl_sock.connect((addr[0], addr[1]))
+        except socket_error as serr:
+            if serr.errno != errno.ECONNREFUSED:
+                raise serr
+            print("Connection to CC_%s failed!" % i)
+            continue
+        count += 1
+        print("Connected to CC node %s!" % i)
         print("\nUploading share to CC node %s ..." % i)
-        ssl_sock.connect((addr[0], addr[1]))
         ssl_sock.send("0".encode('ascii'))
         sm_data_str = str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(feldman_info) + "\n" + str(g) + "\n" + str(
             l) + "\n" + str(k) + "\n" + str(timestamp)
