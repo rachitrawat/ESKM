@@ -106,7 +106,6 @@ while True:
         print("\nPublished info for verification: ", feldman_info)
 
     timestamp = int(time.time())
-    count = 0
     for i, addr in CC_Map.items():
         # distribute shares and verification info
         server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -123,7 +122,6 @@ while True:
                 raise serr
             print("Connection to CC_%s failed!" % i)
             continue
-        count += 1
         print("Connected to CC node %s!" % i)
         print("\nUploading share to CC node %s ..." % i)
         ssl_sock.send("0".encode('ascii'))
