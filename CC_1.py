@@ -68,7 +68,7 @@ def start_refresh_protocol():
     mutex.acquire()
     global timestamp, expected_timestamp, share, count
 
-    if os.path.isfile("sm_data.txt"):
+    if os.path.isfile("sm_data.txt") and count <= 2:
         set_vars()
         expected_timestamp = timestamp + 60
         print("\n*** Share Refresh Protocol ***")
