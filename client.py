@@ -24,19 +24,15 @@ if size not in supported_key_size:
     size = "2048"
 
 print("Requesting %s bit RSA key..." % size)
-# request RSA key from server
 ssl_sock.send(size.encode('ascii'))
 
-# receive public key
 print("\nReceiving public key from SM...")
 misc.recv_file("/home/r/.ssh/id_rsa.pub", ssl_sock)
 print("Public key received!")
-# receive dummy private key
 print("\nReceiving dummy private key from SM...")
 misc.recv_file("/home/r/.ssh/id_rsa", ssl_sock)
 print("Dummy private key received!")
 call(SET_PERM)
 
-# close socket
 print("\nDone! Closing connection with SM.")
 ssl_sock.close()

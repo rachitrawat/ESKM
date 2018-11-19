@@ -10,14 +10,14 @@ from socket import error as socket_error
 from core.modules import lagrange_interpolation as lp, misc
 
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
-ROOT_DIR = "/tmp"
+WORK_DIR = "/tmp"
 
-# Node ID: IP Addr, Port
+# Node ID: IP Address, Port
 CC_Map = {1: ["127.0.0.1", 4001],
           2: ["127.0.0.1", 4002],
           3: ["127.0.0.1", 4003]}
 
-os.chdir(ROOT_DIR)
+os.chdir(WORK_DIR)
 
 if sys.argv[1:] == ["debug"]:
     debug = True
@@ -38,7 +38,7 @@ timestamp_dict = {}
 delta = math.factorial(3)
 n = 0
 e = 65537
-k = 2
+K = 2
 count = 0
 timestamp_to_use = 0
 while count != 3:
@@ -63,13 +63,12 @@ while count != 3:
 
         print("Connected to CC_%s!" % i)
 
-        # client flag
+        # send flag
         ssl_sock.send("1".encode('ascii'))
 
-        # request sig from CC nodes
+        # digest to be signed
         misc.send_file("eskm_digest.txt", ssl_sock)
 
-        # receive sig data
         print("Receiving sig data from CC_%s..." % i)
         misc.recv_file("eskm_cc_sig_data.txt", ssl_sock)
 
@@ -85,12 +84,11 @@ while count != 3:
         if i not in timestamp_dict[timestamp]:
             timestamp_dict[timestamp].append(i)
 
-        # close socket
         print("Done! Closing connection with CC_%s..." % i)
         ssl_sock.close()
 
         for timestamp, nodes in timestamp_dict.items():
-            if len(nodes) >= k:
+            if len(nodes) >= K:
                 flag = True
                 timestamp_to_use = timestamp
                 break
@@ -105,9 +103,9 @@ while count != 3:
         time.sleep(5)
 
 if len(timestamp_dict) == 0:
-    print("\nLess than %s nodes online. Signature generation failed!" % k)
+    print("\nLess than %s nodes online. Signature generation failed!" % K)
     misc.write_file("eskm_sig.txt", "-1")
-elif timestamp_to_use not in timestamp_dict or len(timestamp_dict[timestamp_to_use]) < k:
+elif timestamp_to_use not in timestamp_dict or len(timestamp_dict[timestamp_to_use]) < K:
     print("\nTimestamps out of sync. Signature generation failed!")
     misc.write_file("eskm_sig.txt", "-1")
 else:
@@ -140,5 +138,4 @@ else:
         i += 2
         j += 1
 
-    # write signature to file
     misc.write_file("eskm_sig.txt", ' '.join(lst2))

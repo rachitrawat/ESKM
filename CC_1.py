@@ -12,10 +12,10 @@ from core.modules import misc, share_verification as sv, share_refresh as sr
 
 UPDATE_TIMESTAMP = "cp new_timestamp.txt timestamp.txt".split()
 
-ROOT_DIR = "/tmp/"
+WORK_DIR = "/tmp/"
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates/"
 
-# Node ID: IP Addr, Port
+# Node ID: IP Address, Port
 CC_Map = {1: ["127.0.0.1", 4001],
           2: ["127.0.0.1", 4002],
           3: ["127.0.0.1", 4003]}
@@ -26,16 +26,16 @@ share = 0
 n = 0
 feldman_info = []
 g = 0
-l = 0
-k = 0
+L = 0
+K = 0
 timestamp = 0
 expected_timestamp = 0
-send_refresh_data = {}
+to_send_refresh_data = {}
 recvd_refresh_data = {}
 count = 0
 
 CC = "CC_" + str(SELF_ID)
-dir_ = ROOT_DIR + CC
+dir_ = WORK_DIR + CC
 
 if not os.path.exists(dir_):
     os.makedirs(dir_)
@@ -52,14 +52,14 @@ print(CC + " is running!")
 
 
 def set_vars():
-    global share, n, feldman_info, g, l, k, timestamp
+    global share, n, feldman_info, g, L, K, timestamp
     content = misc.read_file("sm_data.txt")
     share = int(content[0])
     n = int(content[1])
     feldman_info = ast.literal_eval(content[2])
     g = int(content[3])
-    l = int(content[4])
-    k = int(content[5])
+    L = int(content[4])
+    K = int(content[5])
     timestamp = int(content[6])
 
 
@@ -75,19 +75,17 @@ def start_refresh_protocol():
         print("Current Timestamp:", timestamp)
         print("Expected Timestamp:", expected_timestamp)
 
-        if expected_timestamp in send_refresh_data:
+        if expected_timestamp in to_send_refresh_data:
             print("Random zero polynomial already exists!")
         else:
-            send_refresh_data[expected_timestamp] = {}
+            to_send_refresh_data[expected_timestamp] = {}
             recvd_refresh_data[expected_timestamp] = {}
 
-            # shares of a random zero polynomial
             print("Creating a random zero polynomial...")
-            coefficient_lst, shares_lst = sr.refresh_shares(n, l, k)
+            coefficient_lst, shares_lst = sr.refresh_shares(n, L, K)
 
-            # new shares to send
             for idx, val in enumerate(shares_lst):
-                send_refresh_data[expected_timestamp][idx + 1] = val
+                to_send_refresh_data[expected_timestamp][idx + 1] = val
 
             # self share
             recvd_refresh_data[expected_timestamp][SELF_ID] = shares_lst[SELF_ID - 1]
@@ -113,14 +111,10 @@ def start_refresh_protocol():
                     continue
                 print("Connected to CC node %s!" % i)
 
-                # send flag
-                ssl_sock.send("2".encode('ascii'))
-                # send self id
+                ssl_sock.send("2".encode('ascii'))  # send flag
                 ssl_sock.send(str(SELF_ID).encode('ascii'))
-                # send expected timestamp
                 misc.send_string(str(expected_timestamp), ssl_sock)
 
-                # recv new share
                 misc.recv_file("recv_share.txt", ssl_sock)
                 content = misc.read_file("recv_share.txt")
                 recv_share = int(content[0])
@@ -139,7 +133,7 @@ def start_refresh_protocol():
 
                 recvd_refresh_data[expected_timestamp][i] = recv_share
 
-        print("\nShares:%s Required:%s" % (len(recvd_refresh_data[expected_timestamp]), k))
+        print("\nShares:%s Required:%s" % (len(recvd_refresh_data[expected_timestamp]), K))
         count += 1
         print("Iteration:%s" % count)
 
@@ -152,7 +146,7 @@ def start_refresh_protocol():
 
 def refresh_share():
     global count
-    if len(recvd_refresh_data[expected_timestamp]) >= k:
+    if len(recvd_refresh_data[expected_timestamp]) >= K:
         sum = share
         for node, new_share in recvd_refresh_data[expected_timestamp].items():
             sum += new_share
@@ -162,11 +156,11 @@ def refresh_share():
                         str(sum) + "\n" + str(
                             n) + "\n" + str(
                             feldman_info) + "\n" + str(g) + "\n" + str(
-                            l) + "\n" + str(k) + "\n" + str(expected_timestamp))
+                            L) + "\n" + str(K) + "\n" + str(expected_timestamp))
         print("Shares refreshed!")
         print("Removing old shares...")
         recvd_refresh_data.pop(expected_timestamp)
-        send_refresh_data.pop(expected_timestamp)
+        to_send_refresh_data.pop(expected_timestamp)
     else:
         print("Share refresh failed!")
     count = 0
@@ -200,7 +194,6 @@ def listen():
             else:
                 print("Share verification:OK")
 
-            # finished with SM
             print("Done! Closing connection with SM.")
             connstream.close()
 
@@ -220,7 +213,6 @@ def listen():
             print("Sending signature data to client...")
             misc.send_file("client_sig_data.txt", connstream)
 
-            # finished with client
             print("Done! Closing connection with client.")
             connstream.close()
 
@@ -229,18 +221,17 @@ def listen():
             node_id = int(connstream.recv(1).decode('ascii'))
             print("\nCC node %s has connected to fetch new shares!" % node_id)
 
-            # recv expected timestamp
             recv_expected_timestamp = int(misc.recv_string(connstream))
 
             str1 = "-1"
             str2 = "-1"
 
-            if recv_expected_timestamp == expected_timestamp and recv_expected_timestamp in send_refresh_data:
+            if recv_expected_timestamp == expected_timestamp and recv_expected_timestamp in to_send_refresh_data:
                 print("Requested Timestamp:OK")
                 str2 = str(recv_expected_timestamp)
-                if node_id in send_refresh_data[recv_expected_timestamp]:
+                if node_id in to_send_refresh_data[recv_expected_timestamp]:
                     print("Requested Share:OK")
-                    str1 = str(send_refresh_data[recv_expected_timestamp][node_id])
+                    str1 = str(to_send_refresh_data[recv_expected_timestamp][node_id])
                 else:
                     print("Requested Share:FAIL")
             else:
@@ -250,7 +241,6 @@ def listen():
             misc.write_file("new_share.txt", str1 + "\n" + str2)
             misc.send_file("new_share.txt", connstream)
 
-            # finished with CC
             print("Done! Closing connection with CC node %s." % node_id)
             connstream.close()
 
