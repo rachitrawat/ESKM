@@ -17,26 +17,26 @@ LOCAL_OPENSSL = "/usr/local/ssl/bin/openssl "
 # bin openssl
 OPENSSL = "/usr/bin/openssl "
 
-supported_key_size = ["1024", "2048", "4096"]
+supported_key_sizes = ["1024", "2048", "4096"]
 
 GEN_RSA_PRIVATE = (LOCAL_OPENSSL + "genrsa -out private.pem 2048").split()
 GEN_RSA_PUBLIC = (LOCAL_OPENSSL + "rsa -in private.pem -outform PEM -pubout -out public.pem").split()
 GET_RSA_MODULUS = (LOCAL_OPENSSL + "rsa -noout -modulus -in private.pem").split()
 GET_KEY_INFO = (LOCAL_OPENSSL + "rsa -in private.pem -text -inform PEM -noout").split()
-CONVERT_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
+CONVERT_TO_SSH_PUB = "ssh-keygen -f public.pem -i -mPKCS8".split()
 
-ROOT_DIR = "/tmp"
+WORK_DIR = "/tmp"
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 
 # Total no of nodes
-l = 3
+L = 3
 # Threshold no of nodes
-k = 2
+K = 2
 
-# Node ID: IP Addr, Port
-CC_Map = {1: ["127.0.0.1", 4001],
-          2: ["127.0.0.1", 4002],
-          3: ["127.0.0.1", 4003]}
+# Node ID: IP address, Port
+CC_info_dict = {1: ["127.0.0.1", 4001],
+                2: ["127.0.0.1", 4002],
+                3: ["127.0.0.1", 4003]}
 
 bindsocket = socket.socket()
 bindsocket.bind(("127.0.0.1", 10030))
@@ -52,7 +52,7 @@ while True:
                                  keyfile=CERT_DIR + "/SM.pkey",
                                  ssl_version=ssl.PROTOCOL_TLSv1)
 
-    dir_ = ROOT_DIR + "/SM/" + fromaddr[0]
+    dir_ = WORK_DIR + "/SM/" + fromaddr[0]
 
     if not os.path.exists(dir_):
         os.makedirs(dir_)
@@ -60,7 +60,7 @@ while True:
 
     key_size = str(connstream.recv(4).decode('ascii'))
     print("\nRequested RSA key size: ", key_size)
-    if key_size not in supported_key_size:
+    if key_size not in supported_key_sizes:
         key_size = "2048"
     GEN_RSA_PRIVATE[4] = key_size
 
@@ -69,7 +69,7 @@ while True:
     # generate public key
     call(GEN_RSA_PUBLIC)
     # convert pubkey to ssh format
-    pub = (check_output(CONVERT_SSH_PUB)).decode('ascii')
+    pub = (check_output(CONVERT_TO_SSH_PUB)).decode('ascii')
     misc.write_file("id_rsa.pub", pub)
 
     # extract information from private key
@@ -95,8 +95,8 @@ while True:
     g = misc.square_and_multiply(g, 2, n)
 
     # split and share d
-    # k out of l secret sharing over m
-    coefficient_lst, shares_lst = ss.split_secret(l, k, m, d)
+    # K out of L secret sharing over m
+    coefficient_lst, shares_lst = ss.split_secret(L, K, m, d)
 
     # info for share verification
     feldman_info = []
@@ -105,12 +105,12 @@ while True:
     if debug:
         print("\nPublished info for verification: ", feldman_info)
 
+    # distribute shares and verification info
     timestamp = int(time.time())
-    for i, addr in CC_Map.items():
-        # distribute shares and verification info
+    for i, addr in CC_info_dict.items():
         server_as_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        # require a certificate from the cc Node
+        # require a certificate from the CC Node
         ssl_sock = ssl.wrap_socket(server_as_client,
                                    ca_certs=CERT_DIR + "/CA.cert",
                                    cert_reqs=ssl.CERT_REQUIRED)
@@ -126,23 +126,19 @@ while True:
         print("\nUploading share to CC node %s ..." % i)
         ssl_sock.send("0".encode('ascii'))
         sm_data_str = str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(feldman_info) + "\n" + str(g) + "\n" + str(
-            l) + "\n" + str(k) + "\n" + str(timestamp)
+            L) + "\n" + str(K) + "\n" + str(timestamp)
         misc.write_file("sm_data.txt", sm_data_str)
         misc.send_file("sm_data.txt", ssl_sock)
         print("Done! Closing connection with CC node %s." % i)
         ssl_sock.close()
 
-    # send public key to client
     print("\nSending public key to client...")
     misc.send_file("id_rsa.pub", connstream)
     print("Public key sent to client!")
-    # send dummy private key to client
     print("Sending dummy private key to client...")
     misc.send_file("/tmp/dummy.pem", connstream)
     print("Dummy private key sent to client!")
 
-    # finished with client
     print("Done! Closing connection with client.")
-    # remove files
-    shutil.rmtree(dir_)
+    shutil.rmtree(dir_)  # remove shares
     connstream.close()
