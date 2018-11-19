@@ -1,12 +1,10 @@
 import os
 import random
 
-'''
-    Evaluates polynomial at x
-'''
-
 
 def polynomial_eval(coeff_lst, x, p, modulo=True):
+    """ Evaluates polynomial at x using Horner's rule
+    """
     deg = len(coeff_lst)
     sum = 0
 
@@ -19,15 +17,12 @@ def polynomial_eval(coeff_lst, x, p, modulo=True):
     return sum
 
 
-'''
-    Extended Euclidean Algorithm
-    i = a_inv mod b
-    j = b_inv mod a
-    return i
-'''
-
-
 def multiplicative_inverse(a, b):
+    """ Extended Euclidean Algorithm
+        i = a_inv mod b
+        j = b_inv mod a
+        return i
+    """
     x = 0
     y = 1
     lx = 1
@@ -47,15 +42,12 @@ def multiplicative_inverse(a, b):
     return lx
 
 
-''' 
-    find a primitive root for a safe prime p
-    g is a primitive root if for all prime factors p_i of (p-1),
-    g^((p-1)/p_i) (mod p) is not congruent to 1
-
-'''
-
-
 def find_primitive_root(p):
+    """ Find a primitive root for a safe prime p
+        g is a primitive root if for all prime factors p_i of (p-1),
+        g^((p-1)/p_i) (mod p) is not congruent to 1
+
+    """
     if p == 2:
         return 1
 
@@ -68,13 +60,11 @@ def find_primitive_root(p):
             return g
 
 
-'''
-    Use python built-in pow()
-    Also account for -ve exponent
-'''
-
-
 def square_and_multiply(x, c, n):
+    """ returns x^c mod n
+        Uses python built-in pow()
+        Also accounts for -ve exponent
+    """
     if c < 0:
         x = multiplicative_inverse(x, n)
         c = abs(c)
@@ -102,12 +92,9 @@ def is_prime(n, k=11):
     return True
 
 
-'''
-    Primality test
-'''
-
-
 def miller_rabin(n, d, r):
+    """ Primality test
+    """
     a = random.randint(2, n - 2)
     x = pow(a, d, n)
 
@@ -122,13 +109,9 @@ def miller_rabin(n, d, r):
     return False
 
 
-'''
-    Return a random safe prime p of key-size bits in size
-
-'''
-
-
 def generate_safe_prime(keysize=300):
+    """ Returns a random safe prime p of key-size bits in size
+    """
     while True:
         num = random.randrange(2 ** (keysize - 1), 2 ** keysize)
         num_ = (num - 1) // 2
@@ -136,10 +119,8 @@ def generate_safe_prime(keysize=300):
             return num
 
 
-''' Chinese Remainder Theorem '''
-
-
 def crt(m, x):
+    """ Chinese Remainder Theorem """
     while True:
         temp1 = multiplicative_inverse(m[1], m[0]) * x[0] * m[1] + \
                 multiplicative_inverse(m[0], m[1]) * x[1] * m[0]
@@ -160,11 +141,8 @@ def crt(m, x):
     return x[0]
 
 
-''' robust file transfer methods '''
-
-
 def send_file(file_name, socket_obj):
-    # max recv bytes size
+    """ Robust file transfer method """
     BYTES_RECV = 1024
 
     statinfo = os.stat(file_name)
@@ -174,7 +152,6 @@ def send_file(file_name, socket_obj):
     fsize_b = bin(file_size)[2:].zfill(32)
     socket_obj.send(fsize_b.encode('ascii'))
 
-    # send file
     f = open(file_name, 'rb')
 
     while file_size >= BYTES_RECV:
@@ -190,14 +167,12 @@ def send_file(file_name, socket_obj):
 
 
 def recv_file(file_name, socket_obj):
-    # max recv bytes size
+    """ Robust file transfer method """
     BYTES_RECV = 1024
 
-    # recv file size
     fsize_b = socket_obj.recv(32).decode('ascii')
     fsize = int(fsize_b, 2)
 
-    # recv file
     f = open(file_name, 'wb')
     file_size = fsize
 
@@ -229,6 +204,7 @@ def read_file(file_name):
 
 
 def ascii_len(s):
+    """ returns string size in bytes """
     return len(s.encode('ascii'))
 
 
@@ -239,14 +215,11 @@ def send_string(string, socket_obj):
     fsize_b = bin(size)[2:].zfill(32)
     socket_obj.send(fsize_b.encode('ascii'))
 
-    # send string
     socket_obj.send(string.encode('ascii'))
 
 
 def recv_string(socket_obj):
-    # recv string size
     fsize_b = socket_obj.recv(32).decode('ascii')
     fsize = int(fsize_b, 2)
 
-    # recv string
     return socket_obj.recv(fsize).decode('ascii')
