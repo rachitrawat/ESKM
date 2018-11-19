@@ -5,7 +5,7 @@ import shutil
 import socket
 import ssl
 import time
-from ssl import socket_error
+from socket import error as socket_error
 from subprocess import call, check_output
 
 from core.modules import secret_sharing as ss, misc
