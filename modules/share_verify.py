@@ -1,10 +1,11 @@
-from core.modules import misc
+from modules import utils
 
-# feldman share verification
 
 def verify_share(i, g_exp_share, public_info, q):
+    """ Feldman’s Verifiable Secret Sharing.
+    """
     prod = 1
     for idx, val in enumerate(public_info):
-        prod *= misc.square_and_multiply(val, i ** idx, q)
+        prod *= utils.sq_and_mult(val, i ** idx, q)
 
     return prod % q == g_exp_share

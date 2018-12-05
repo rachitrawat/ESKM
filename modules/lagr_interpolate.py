@@ -1,9 +1,12 @@
 from functools import reduce
-from core.modules import misc
+
+from modules import utils
 
 
-# return lambda_i(x=0)
 def lambda_eval(i, lst, p, flag=False):
+    """ Lagrange interpolation
+        return lambda(0)
+    """
     num = []
     den = []
     for element in lst:
@@ -18,10 +21,9 @@ def lambda_eval(i, lst, p, flag=False):
         if eval_den < 0:
             eval_den = p - abs(eval_den)
 
-        return (eval_num * misc.multiplicative_inverse(eval_den, p)) % p
+        return (eval_num * utils.mult_inv(eval_den, p)) % p
 
-    # p is delta
-    return eval_num * p // eval_den
+    return eval_num * p // eval_den  # p is delta
 
 
 def reconstruct_secret(dict, p):

@@ -7,7 +7,7 @@ import sys
 import time
 from socket import error as socket_error
 
-from core.modules import lagrange_interpolation as lp, misc
+from modules import lagr_interpolate as lp, utils
 
 CERT_DIR = "/home/r/PycharmProjects/ESKM/certificates"
 WORK_DIR = "/tmp"
@@ -26,12 +26,12 @@ else:
 
 # read Encoded Message (EM) from file
 # EM will be signed
-content = misc.read_file("eskm_em.txt")
+content = utils.read_file("eskm_em.txt")
 
 em = ''.join(content)
 digest = int(em, 16)
 
-misc.write_file("eskm_digest.txt", str(digest))
+utils.write_file("eskm_digest.txt", str(digest))
 
 x = [0] * 4
 timestamp_dict = {}
@@ -67,12 +67,12 @@ while count != 3:
         ssl_sock.send("1".encode('ascii'))
 
         # digest to be signed
-        misc.send_file("eskm_digest.txt", ssl_sock)
+        utils.send_file("eskm_digest.txt", ssl_sock)
 
         print("Receiving sig data from CC_%s..." % i)
-        misc.recv_file("eskm_cc_sig_data.txt", ssl_sock)
+        utils.recv_file("eskm_cc_sig_data.txt", ssl_sock)
 
-        content = misc.read_file("eskm_cc_sig_data.txt")
+        content = utils.read_file("eskm_cc_sig_data.txt")
         x[i] = int(content[0])
         n = int(content[1])
         timestamp = int(content[2])
@@ -104,23 +104,23 @@ while count != 3:
 
 if len(timestamp_dict) == 0:
     print("\nLess than %s nodes online. Signature generation failed!" % K)
-    misc.write_file("eskm_sig.txt", "-1")
+    utils.write_file("eskm_sig.txt", "-1")
 elif timestamp_to_use not in timestamp_dict or len(timestamp_dict[timestamp_to_use]) < K:
     print("\nTimestamps out of sync. Signature generation failed!")
-    misc.write_file("eskm_sig.txt", "-1")
+    utils.write_file("eskm_sig.txt", "-1")
 else:
     w = 1
     chosen_nodes = timestamp_dict[timestamp_to_use]
     for idx, val in enumerate(chosen_nodes):
         lambda_i = lp.lambda_eval(val, chosen_nodes, delta, True)
-        w *= misc.square_and_multiply(x[val], 2 * lambda_i, n)
+        w *= utils.sq_and_mult(x[val], 2 * lambda_i, n)
 
     four_delta_sq = 4 * delta ** 2
 
-    a = misc.multiplicative_inverse(four_delta_sq, e)
+    a = utils.mult_inv(four_delta_sq, e)
     b = (1 - (four_delta_sq * a)) // e
 
-    threshold_sig = misc.square_and_multiply(w, a, n) * misc.square_and_multiply(digest, b, n)
+    threshold_sig = utils.sq_and_mult(w, a, n) * utils.sq_and_mult(digest, b, n)
     threshold_sig %= n
 
     if debug:
@@ -138,4 +138,4 @@ else:
         i += 2
         j += 1
 
-    misc.write_file("eskm_sig.txt", ' '.join(lst2))
+    utils.write_file("eskm_sig.txt", ' '.join(lst2))

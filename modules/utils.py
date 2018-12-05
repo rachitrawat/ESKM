@@ -17,7 +17,7 @@ def polynomial_eval(coeff_lst, x, p, modulo=True):
     return sum
 
 
-def multiplicative_inverse(a, b):
+def mult_inv(a, b):
     """ Extended Euclidean Algorithm
         i = a_inv mod b
         j = b_inv mod a
@@ -56,17 +56,17 @@ def find_primitive_root(p):
 
     while True:
         g = random.randint(2, p - 1)
-        if not (square_and_multiply(g, p1, p) == 1) and not (square_and_multiply(g, p2, p) == 1):
+        if not (sq_and_mult(g, p1, p) == 1) and not (sq_and_mult(g, p2, p) == 1):
             return g
 
 
-def square_and_multiply(x, c, n):
+def sq_and_mult(x, c, n):
     """ returns x^c mod n
         Uses python built-in pow()
         Also accounts for -ve exponent
     """
     if c < 0:
-        x = multiplicative_inverse(x, n)
+        x = mult_inv(x, n)
         c = abs(c)
 
     return pow(x, c, n)
@@ -109,7 +109,7 @@ def miller_rabin(n, d, r):
     return False
 
 
-def generate_safe_prime(keysize=300):
+def gen_safe_prime(keysize=300):
     """ Returns a random safe prime p of key-size bits in size
     """
     while True:
@@ -122,8 +122,8 @@ def generate_safe_prime(keysize=300):
 def crt(m, x):
     """ Chinese Remainder Theorem """
     while True:
-        temp1 = multiplicative_inverse(m[1], m[0]) * x[0] * m[1] + \
-                multiplicative_inverse(m[0], m[1]) * x[1] * m[0]
+        temp1 = mult_inv(m[1], m[0]) * x[0] * m[1] + \
+                mult_inv(m[0], m[1]) * x[1] * m[0]
 
         temp2 = m[0] * m[1]
 

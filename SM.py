@@ -8,7 +8,7 @@ import time
 from socket import error as socket_error
 from subprocess import call, check_output
 
-from core.modules import secret_sharing as ss, misc
+from modules import secret_sharer as ss, utils
 
 debug = False
 
@@ -70,7 +70,7 @@ while True:
     call(GEN_RSA_PUBLIC)
     # convert pubkey to ssh format
     pub = (check_output(CONVERT_TO_SSH_PUB)).decode('ascii')
-    misc.write_file("id_rsa.pub", pub)
+    utils.write_file("id_rsa.pub", pub)
 
     # extract information from private key
     data = (check_output(GET_KEY_INFO)).decode('ascii')
@@ -88,11 +88,11 @@ while True:
     p_ = (p - 1) // 2
     q_ = (q - 1) // 2
     m = p_ * q_
-    d = misc.multiplicative_inverse(e, m)
-    g_p = misc.find_primitive_root(p)
-    g_q = misc.find_primitive_root(q)
-    g = misc.crt([g_p, g_q], [p, q])
-    g = misc.square_and_multiply(g, 2, n)
+    d = utils.mult_inv(e, m)
+    g_p = utils.find_primitive_root(p)
+    g_q = utils.find_primitive_root(q)
+    g = utils.crt([g_p, g_q], [p, q])
+    g = utils.sq_and_mult(g, 2, n)
 
     # split and share d
     # K out of L secret sharing over m
@@ -101,7 +101,7 @@ while True:
     # info for share verification
     feldman_info = []
     for element in coefficient_lst:
-        feldman_info.append(misc.square_and_multiply(g, element, n))
+        feldman_info.append(utils.sq_and_mult(g, element, n))
     if debug:
         print("\nPublished info for verification: ", feldman_info)
 
@@ -127,16 +127,16 @@ while True:
         ssl_sock.send("0".encode('ascii'))
         sm_data_str = str(shares_lst[i - 1]) + "\n" + str(n) + "\n" + str(feldman_info) + "\n" + str(g) + "\n" + str(
             L) + "\n" + str(K) + "\n" + str(timestamp)
-        misc.write_file("sm_data.txt", sm_data_str)
-        misc.send_file("sm_data.txt", ssl_sock)
+        utils.write_file("sm_data.txt", sm_data_str)
+        utils.send_file("sm_data.txt", ssl_sock)
         print("Done! Closing connection with CC node %s." % i)
         ssl_sock.close()
 
     print("\nSending public key to client...")
-    misc.send_file("id_rsa.pub", connstream)
+    utils.send_file("id_rsa.pub", connstream)
     print("Public key sent to client!")
     print("Sending dummy private key to client...")
-    misc.send_file("/tmp/dummy.pem", connstream)
+    utils.send_file("/tmp/dummy.pem", connstream)
     print("Dummy private key sent to client!")
 
     print("Done! Closing connection with client.")

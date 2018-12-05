@@ -8,7 +8,8 @@ import threading
 import time
 from socket import error as socket_error
 
-from core.modules import misc, share_verification as sv, share_refresh as sr
+from modules import share_refresh as sr, share_verify as sv
+from modules import utils
 
 UPDATE_TIMESTAMP = "cp new_timestamp.txt timestamp.txt".split()
 
@@ -53,7 +54,7 @@ print(CC + " is running!")
 
 def set_vars():
     global share, n, feldman_info, g, L, K, timestamp
-    content = misc.read_file("sm_data.txt")
+    content = utils.read_file("sm_data.txt")
     share = int(content[0])
     n = int(content[1])
     feldman_info = ast.literal_eval(content[2])
@@ -113,10 +114,10 @@ def start_refresh_protocol():
 
                 ssl_sock.send("2".encode('ascii'))  # send flag
                 ssl_sock.send(str(SELF_ID).encode('ascii'))
-                misc.send_string(str(expected_timestamp), ssl_sock)
+                utils.send_string(str(expected_timestamp), ssl_sock)
 
-                misc.recv_file("recv_share.txt", ssl_sock)
-                content = misc.read_file("recv_share.txt")
+                utils.recv_file("recv_share.txt", ssl_sock)
+                content = utils.read_file("recv_share.txt")
                 recv_share = int(content[0])
                 recv_timestamp = int(content[1])
 
@@ -152,11 +153,11 @@ def refresh_share():
             sum += new_share
 
         # update everything
-        misc.write_file("sm_data.txt",
-                        str(sum) + "\n" + str(
-                            n) + "\n" + str(
-                            feldman_info) + "\n" + str(g) + "\n" + str(
-                            L) + "\n" + str(K) + "\n" + str(expected_timestamp))
+        utils.write_file("sm_data.txt",
+                         str(sum) + "\n" + str(
+                             n) + "\n" + str(
+                             feldman_info) + "\n" + str(g) + "\n" + str(
+                             L) + "\n" + str(K) + "\n" + str(expected_timestamp))
         print("Shares refreshed!")
         print("Removing old shares...")
         recvd_refresh_data.pop(expected_timestamp)
@@ -185,11 +186,11 @@ def listen():
         if flag == "0":
             print("\nSM has connected!")
             print("Receiving key-share...")
-            misc.recv_file("sm_data.txt", connstream)
+            utils.recv_file("sm_data.txt", connstream)
             set_vars()
 
             # feldman share verification
-            if not sv.verify_share(SELF_ID, misc.square_and_multiply(g, int(share), n), feldman_info, n):
+            if not sv.verify_share(SELF_ID, utils.sq_and_mult(g, int(share), n), feldman_info, n):
                 print("Share verification:FAILED")
             else:
                 print("Share verification:OK")
@@ -202,16 +203,16 @@ def listen():
             set_vars()
             print("\nClient has connected!")
             # digest to be signed
-            misc.recv_file("client_digest.txt", connstream)
+            utils.recv_file("client_digest.txt", connstream)
 
-            content = misc.read_file("client_digest.txt")
+            content = utils.read_file("client_digest.txt")
             digest = int(content[0])
 
-            x = misc.square_and_multiply(digest, 2 * delta * share, n)
+            x = utils.sq_and_mult(digest, 2 * delta * share, n)
 
-            misc.write_file("client_sig_data.txt", str(x) + "\n" + str(n) + "\n" + str(timestamp))
+            utils.write_file("client_sig_data.txt", str(x) + "\n" + str(n) + "\n" + str(timestamp))
             print("Sending signature data to client...")
-            misc.send_file("client_sig_data.txt", connstream)
+            utils.send_file("client_sig_data.txt", connstream)
 
             print("Done! Closing connection with client.")
             connstream.close()
@@ -221,7 +222,7 @@ def listen():
             node_id = int(connstream.recv(1).decode('ascii'))
             print("\nCC node %s has connected to fetch new shares!" % node_id)
 
-            recv_expected_timestamp = int(misc.recv_string(connstream))
+            recv_expected_timestamp = int(utils.recv_string(connstream))
 
             str1 = "-1"
             str2 = "-1"
@@ -238,8 +239,8 @@ def listen():
                 print("Requested Timestamp:FAIL")
 
             print("Sending refresh data to node %s..." % node_id)
-            misc.write_file("new_share.txt", str1 + "\n" + str2)
-            misc.send_file("new_share.txt", connstream)
+            utils.write_file("new_share.txt", str1 + "\n" + str2)
+            utils.send_file("new_share.txt", connstream)
 
             print("Done! Closing connection with CC node %s." % node_id)
             connstream.close()
