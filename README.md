@@ -13,3 +13,6 @@ enforced security. For signing, the system uses k-out-of-n threshold RSA signatu
 1. Build patched OpenSSL [(src)](https://github.com/rachitrawat/openssl_1.0.2n) with support for threshold RSA signatures 
 2. Use given CC_1.py template for your Control Cluster backend
 3. Use given SM.py template for your Security Manager backend
+
+Technical Report: [Link](https://github.com/rachitrawat/ESKM/blob/master/readme.pdf) </br>
+Original Paper: [Link](https://eprint.iacr.org/2018/389.pdf)
